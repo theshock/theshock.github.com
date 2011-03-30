@@ -27,9 +27,18 @@ new function () {
 			stroke: '#900',
 			fill  : '#300'
 		})
-		.listenMouse() // shaper must wait for mouse events!
+		// shaper must wait for mouse events!
+		.listenMouse()
+		// if mouse down not on circle
 		.addEvent('away:mousedown', function (e) {
-			this.moveTo(e.offset, Number.random(100, 250), 'sine');
+			this.moveTo(
+				// to mouse cursor
+				e.offset,
+				// with random speed
+				Number.random(100, 250),
+				// sine-in-out animating function
+				'sine'
+			);
 		});
 }
 		</script>
