@@ -13,9 +13,6 @@
 		<script src="/libcanvas/files/js/ui-core.js"></script>
 		<script>
 new function () {
-	var Circle = LibCanvas.Shapes.Circle;
-	var Line   = LibCanvas.Shapes.Line;
-
 	UiCore.libcanvas = new LibCanvas('canvas')
 		.listenMouse()
 		.size({
@@ -24,20 +21,15 @@ new function () {
 		}, true)
 		.start();
 
-	var last = null;
-
-	UiCore.libcanvas.mouse.addEvent('dblclick', function (e) {
-		var coord = e.offset.clone();
-
-		UiCore
-			.createShaper(new Circle(coord, 5), 5)
-			.clickable()
-			.draggable();
-
-		if (last) UiCore.createShaper(new Line(coord, last), 4);
-
-		last = coord;
-	});
+	UiCore.libcanvas
+		.createShaper({
+			shape : UiCore.randomShape('circle'),
+			stroke: '#900',
+			fill  : '#300'
+		})
+		.addEvent('away:mousedown', function (e) {
+			this.moveTo(e.offset, Number.random(100, 250), 'sine');
+		});
 }
 		</script>
 
