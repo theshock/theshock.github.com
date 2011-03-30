@@ -9,11 +9,10 @@
 	</head>
 	<body>
 		<canvas></canvas>
-		<p>Drop rectangle to circle</p>
 		<script src="/libcanvas/files/js/ui-core.js"></script>
 		<script>
 new function () {
-	UiCore.libcanvas = new LibCanvas('canvas')
+	UiCore.libcanvas = new LibCanvas('canvas', { name: 'triangle-layer' })
 		.listenMouse()
 		.size({
 			width : 400,
@@ -21,25 +20,17 @@ new function () {
 		}, true)
 		.start();
 
-	var shaper = function (type, z) {
+	var shaper = function (type, layer) {
 		return UiCore
-			.createShaper(UiCore.randomShape(type), z)
+			.createShaper(UiCore.randomShape(type), 1, layer)
 			.listenMouse()
 			.clickable()
 			.draggable();
 	};
 
-	var circ = shaper('circle', 1);
-	var rect = shaper('rectangle', 2);
-
-	rect.drop(circ);
-
-	rect.addEvent('dropped', function (to) {
-		trace(to ?
-			'Rectangle dropped to circle' :
-			'Rectangle dropped NOT to circle'
-		);
-	});
+	shaper('triangle' , UiCore.libcanvas);
+	shaper('circle'   , UiCore.libcanvas.createLayer('circle-layer'));
+	shaper('rectangle', UiCore.libcanvas.createLayer('rectangle-layer'));
 }
 		</script>
 
