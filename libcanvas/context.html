@@ -8,7 +8,9 @@
 		<script src="/libcanvas/js/libcanvas.js"></script>
 	</head>
 	<body>
-		<div id="app"> <canvas width="400" height="250"></canvas> </div>
+		<div id="app" style="width:400px;height:250px">
+			<canvas width="400" height="250"></canvas>
+		</div>
 		<script>
 new function () {
 
@@ -17,7 +19,7 @@ new function () {
 	var canvas  = atom('canvas').first;
 	var context = canvas.getContext('2d-libcanvas');
 
-	// .5 нужно для того, чтобы не блурило
+	// .5 нужно для того, чтобы не блурило (snap-to-pixel)
 
 	// Begin/close path, line/moveTo
 	new function () {
@@ -33,7 +35,7 @@ new function () {
 
 	// Shape fill/stroke
 	new function () {
-		var testShape = new LC.Rectangle(60.5, 20.5, 30, 30);
+		var testShape = new LC.Rectangle(60, 20, 30, 30).snapToPixel();
 		context
 			.fill  (testShape, '#090')
 			.stroke(testShape, '#0f0');

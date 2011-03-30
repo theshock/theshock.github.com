@@ -2,7 +2,7 @@ html, body {
 	color: #eee;
 	background: #111;
 }
-#app {
+#app, .libcanvas-layers-container {
 	border: 1px solid #666;
 	margin: 12px;
 	display: inline-block;

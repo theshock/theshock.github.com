@@ -8,12 +8,12 @@
 		<script src="/libcanvas/js/libcanvas.js"></script>
 	</head>
 	<body>
-		<div id="app"> <canvas></canvas> </div>
+		<canvas></canvas>
 		<script>
 new function () {
 	LibCanvas.extract();
 
-	new LibCanvas('#app canvas', {
+	new LibCanvas('canvas', {
 		backBuffer: 'off',
 		preloadImages: { sprite: '/libcanvas/img/sprite-ok.png' }
 	})
