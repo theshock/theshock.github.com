@@ -27,6 +27,7 @@ new function () {
 			stroke: '#900',
 			fill  : '#300'
 		})
+		.listenMouse() // shaper must wait for mouse events!
 		.addEvent('away:mousedown', function (e) {
 			this.moveTo(e.offset, Number.random(100, 250), 'sine');
 		});
