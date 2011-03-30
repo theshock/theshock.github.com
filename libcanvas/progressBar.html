@@ -49,7 +49,7 @@ new function () {
 	}, true)
 	.start(function () {
 		this.ctx.fillAll('#dbd2cb').text({
-			text: 'Ready!',
+			text: this.imagePreloader.getInfo(),
 			padding: 20
 		});
 	});
