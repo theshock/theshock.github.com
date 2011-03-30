@@ -5,4 +5,5 @@ html, body {
 #app {
 	border: 1px solid #666;
 	margin: 12px;
+	display: inline-block;
 }
