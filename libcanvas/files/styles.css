@@ -1,7 +1,7 @@
 html, body {
 	color: #ccc;
 	background: #111;
-	font-family: sans-serif;
+	font: 15px/20px sans-serif;
 }
 a {
 	color: royalblue;
