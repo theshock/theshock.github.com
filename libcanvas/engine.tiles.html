@@ -16,7 +16,7 @@ new function () {
 
 	new LibCanvas('canvas', {
 		backBuffer: 'off',
-		preloadImages: { sprite: '/libcanvas/img/sprite-ok.png' }
+		preloadImages: { sprite: '/libcanvas/files/img/sprite-ok.png' }
 	})
 	.listenMouse()
 	.size(32*6, 32*4, true)
@@ -33,7 +33,7 @@ new function () {
 			.addTiles({
 				c: '#030',
 				a: '#036',
-				i: this.getImage('sprite').sprite(),
+				i: this.getImage('sprite'),
 				f: function (ctx, rect) {
 					ctx.stroke(new Line(rect.from, rect.to), '#66f');
 					ctx.stroke(new Line(
