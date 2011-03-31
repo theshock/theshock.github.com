@@ -504,7 +504,7 @@ LibCanvas.namespace('Behaviors').Animatable = atom.Class({
 		args = atom.extend({
 			fn    : 'linear',
 			params: [],
-			time  : 500
+			time  : 500,
 		}, args);
 
 		if (!Array.isArray(args.fn)) {
@@ -1388,7 +1388,7 @@ var start = function () {
 	return 'remove';
 };
 var stop = function () {
-	this.libcanvas.addElement(this);
+	this.libcanvas.rmElement(this);
 	return 'remove';
 };
 
@@ -1397,13 +1397,13 @@ LibCanvas.namespace('Behaviors').Drawable = atom.Class({
 	libcanvasIsReady: false,
 	setLibcanvas : function (libcanvas) {
 		if (this.libcanvas) {
-			this.libcanvas.rmElement(this)
+			this.libcanvas.rmElement(this);
 			this.libcanvas = libcanvas;
 		} else {
 			this.libcanvas = libcanvas;
 			this.addEvent('libcanvasReady', function () {
 				this.libcanvasIsReady = true;
-			})
+			});
 			this.readyEvent('libcanvasSet');
 			this.libcanvas.addEvent('ready', this.readyEvent.context(this, ['libcanvasReady']));
 		}
@@ -4300,7 +4300,7 @@ LibCanvas.namespace('Engines').Tile = atom.Class({
 		return this.rects[cell.x + '.' + cell.y];
 	},
 	getCell : function (point) {
-		point = Point.from(arguments);
+		point = LibCanvas.Point.from(arguments);
 		var x = parseInt(point.x / (this.cellWidth  + this.margin)),
 			y = parseInt(point.y / (this.cellHeight + this.margin)),
 			row = this.matrix[y];
