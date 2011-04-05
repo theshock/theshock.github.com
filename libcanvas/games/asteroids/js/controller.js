@@ -4,6 +4,8 @@ Asteroids.Controller = atom.Class({
 	initialize: function (libcanvas) {
 		this.libcanvas = libcanvas;
 
+		this.bullets   = [];
+		this.asteroids = [];
 		this.bulletOnDie = this.bulletOnDie.context(this);
 		this.addAsteroid = this.addAsteroid.context(this);
 		this.start();
@@ -39,9 +41,6 @@ Asteroids.Controller = atom.Class({
 		this.bullets.erase(bullet);
 	},
 
-	bullets: [],
-	asteroids: [],
-	
 	createAsteroids: function () {
 		for (var i = 3; i--;) this.addAsteroid(new Asteroids.Asteroid());
 		return this;

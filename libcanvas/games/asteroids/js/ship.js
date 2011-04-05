@@ -170,7 +170,7 @@ Asteroids.Ship = atom.Class({
 		blinker.fn = function (error) {
 			this.hidden = !this.hidden;
 			this.invoker.after(250 - error, blinker);
-		}.context(this)
+		}.context(this);
 
 		blinker(0);
 
