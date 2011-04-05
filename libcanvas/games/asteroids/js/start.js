@@ -25,7 +25,7 @@ window.Asteroids = {
 Asteroids.start = function (canvas) {
 	var files = '/libcanvas/games/asteroids/';
 	
-	atom(canvas).css({ background: 'url("' + files + 'images/stars.jpg")' });
+	atom.dom(canvas).css({ background: 'url("' + files + 'images/stars.jpg")' });
 
 	new LibCanvas(canvas, {
 			fps: Asteroids.config.fps,

@@ -14,7 +14,7 @@
 new function () {
 	LibCanvas.extract();
 
-	var canvas = atom('canvas').first;
+	var canvas = atom.dom('canvas').first;
 
 	new Trace({
 		libcanvas: new LibCanvas(canvas),

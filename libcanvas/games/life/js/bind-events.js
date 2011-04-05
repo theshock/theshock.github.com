@@ -9,7 +9,7 @@ window.bindEvents = function (mouse, engine) {
 		engine.update();
 	});
 
-	atom('button.start').bind('click', function () {
+	atom.dom('button.start').bind('click', function () {
 		if (timeout) return;
 
 		timeout = function () {
@@ -19,14 +19,14 @@ window.bindEvents = function (mouse, engine) {
 		}.periodical(config.updateTime);
 	});
 
-	atom('button.stop').bind('click', function () {
+	atom.dom('button.stop').bind('click', function () {
 		if (timeout) {
 			timeout.stop();
 			timeout = 0;
 		}
 	});
 
-	atom('button.clear').bind('click', function () {
+	atom.dom('button.clear').bind('click', function () {
 		if (confirm('Clear field?')) {
 			for (var y = cells.length; y--;) for (var x = cells[y].length; x--;) {
 				cells[y][x] = 0;

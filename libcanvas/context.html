@@ -17,7 +17,7 @@ new function () {
 
 	var LC = LibCanvas.extract({});
 
-	var canvas  = atom('canvas').first;
+	var canvas  = atom.dom('canvas').first;
 	var context = canvas.getContext('2d-libcanvas');
 
 	// .5 нужно для того, чтобы не блурило (snap-to-pixel)
