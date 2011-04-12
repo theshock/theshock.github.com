@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Raycaster</title>
+		<style>
+html { background: black; }
+#minimap,
+#minimapobjects {
+	border: 1px solid #060;
+	position : absolute;
+}
+#eye {
+	border: 1px solid #060;
+	background: #999;
+	margin: 8px 0;
+}
+		</style>
+		<script src="atom.js"></script>
+		<script src="libcanvas.js"></script>
+		<script src="main.js"></script>
+	</head>
+	<body>
+		<div id="minimapcontainer">
+			<canvas id="eye"></canvas>
+			<canvas id="minimap"></canvas>
+			<canvas id="minimapobjects"></canvas>
+			<img src="walls-doom.png" id="walls" />
+			<img src="floor-ceil-indexed.png" id="floorCeil" />
+		</div>
+	</body>
+</html>
