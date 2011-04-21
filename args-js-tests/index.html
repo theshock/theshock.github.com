@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Args.js</title>
+		<link href="tests-lib/qunit.css" rel="stylesheet" />
+		<script src="tests-lib/jquery.js"></script>
+		<script src="tests-lib/qunit.js"></script>
+		<script src="args.js"></script>
+	</head>
+	<body>
+		<h1 id="qunit-header">Args.js tests</h1>
+		<h2 id="qunit-banner"></h2>
+		<div id="qunit-testrunner-toolbar"></div>
+		<h2 id="qunit-userAgent"></h2>
+		<ol id="qunit-tests"></ol>
+		<div id="qunit-fixture"></div>
+	</body>
+	<!-- Tests -->
+	<script>
+	module('Args.js');
+	
+	test('Default values', function () {
+		
+		var run = function (foo, bar) {
+			Args(arguments).defaults(1, 2);
+			
+			return [foo, bar];
+		};
+		
+		deepEqual(run(    ), [1, 2], 'Zero arguments');
+		deepEqual(run(3   ), [3, 2], 'One  argument ');
+		deepEqual(run(3, 4), [3, 4], 'Two  arguments');
+	});
+	
+	test('Default values + required', function () {
+		
+		var run = function (keyname, fn) {
+			Args(arguments).defaults(null, Args.required);
+			return [keyname, fn];
+		}
+		
+		var listener = function () { alert(1) };
+		
+		deepEqual(run( 'enter', listener ), ['enter', listener], 'Two arguments');
+		deepEqual(run(          listener ), [  null , listener], 'Only second arguments');
+		raises(function () {
+			run(); // Error: 1 args required, 0 given
+		}, 'Required argument is empty');
+	});
+	
+	test('All arguments required', function () {
+		
+		var run = function (foo, bar, qux) {
+			Args(arguments).allRequired();
+			
+			return true;
+		}
+		
+		ok(run(1,2,3), 'All arguments presents');
+		raises(function () {
+			run(1,2  ); // Error: 3 args required, 2 given
+		}, 'not enought arguments');
+	});
+	
+	test('Type casting', function () {
+		
+		var run = function (foo, bar) {
+			Args(arguments).cast(String, parseInt);
+			
+			strictEqual(foo, '123', 'Number becames a string');
+			strictEqual(bar,  256 , 'Hex string parsed as int');
+		}
+	
+		run(123, '0x100');
+	});
+	
+	test('Type Hinting', function () {
+		
+		var Foo = function(){};
+		var Bar = function(){};
+		
+		var run = function (foo, bar) {
+			Args(arguments).hinting(Foo, Bar);
+			return true;
+		};
+		
+		ok(run(new Foo(), new Bar()), 'Type hinting successful'); // Success
+		raises(function () {
+			run(1,2); // Error
+		}, 'Wrong types in type hinting');
+	});
+	</script>
+</html>
