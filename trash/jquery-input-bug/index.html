@@ -6,18 +6,14 @@
 		<script src="jquery-1.5.2.js"></script>
 		<script>
 $(function() {
-	try {
-		// success:
-		$('<div />', {});
-		$('<input>', { 'class': 'test' });
-		$('<input type="hidden" />').attr({ 'class': '123' });
+	// success:
+	$('<div />', {});
+	$('<input>', { 'class': 'test' });
+	$('<input type="hidden" />').attr({ 'class': '123' });
 
-		// fail:
-		$('<input type="hidden" />', { 'class': 'test' });
-		$('<input type="hidden" />', {});
-	} catch (e) {
-		$('<p />', { text: e }).appendTo('body');
-	}
+	// fail:
+	$('<input type="hidden" />', { 'class': 'test' });
+	$('<input type="hidden" />', {});
 });
 		</script>
 	</head>
