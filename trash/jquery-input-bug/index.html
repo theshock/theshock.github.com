@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Input bug</title>
+		<script src="jquery-1.5.2"></script>
+		<script>
+$(function() {
+	// success:
+	$('<div />', {});
+	$('<input>', { 'class': 'test' });
+	$('<input type="hidden" />').attr({ 'class': '123' });
+
+	// fail:
+	$('<input type="hidden" />', { 'class': 'test' });
+	$('<input type="hidden" />', {});
+});
+		</script>
+	</head>
+	<body></body>
+</html>
