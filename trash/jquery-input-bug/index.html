@@ -3,17 +3,21 @@
 	<head>
 		<meta charset="utf-8">
 		<title>Input bug</title>
-		<script src="jquery-1.5.2"></script>
+		<script src="jquery-1.5.2.js"></script>
 		<script>
 $(function() {
-	// success:
-	$('<div />', {});
-	$('<input>', { 'class': 'test' });
-	$('<input type="hidden" />').attr({ 'class': '123' });
+	try {
+		// success:
+		$('<div />', {});
+		$('<input>', { 'class': 'test' });
+		$('<input type="hidden" />').attr({ 'class': '123' });
 
-	// fail:
-	$('<input type="hidden" />', { 'class': 'test' });
-	$('<input type="hidden" />', {});
+		// fail:
+		$('<input type="hidden" />', { 'class': 'test' });
+		$('<input type="hidden" />', {});
+	} catch (e) {
+		$('<p />', { text: e }).appendTo('body');
+	}
 });
 		</script>
 	</head>
