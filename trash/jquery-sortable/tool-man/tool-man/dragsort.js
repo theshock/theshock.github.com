@@ -1,5 +1,19 @@
 /* Copyright (c) 2005 Tim Taylor Consulting (see LICENSE.txt) */
 
+makeListSortable : function(list) {
+	var helpers = ToolMan.helpers()
+	var coordinates = ToolMan.coordinates()
+	var items = list.getElementsByTagName("li")
+
+	helpers.map(items, function(item) {
+		var dragGroup = dragsort.makeSortable(item) // <====
+		dragGroup.setThreshold(4)
+		// ...
+	})
+	for (var i = 1, n = arguments.length; i < n; i++)
+		helpers.map(items, arguments[i])
+},
+
 ToolMan._dragsortFactory = {
 	makeSortable : function(item) {
 		var group = ToolMan.drag().createSimpleGroup(item)
