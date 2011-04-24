@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+		<style>
+			ol {
+				border: 1px dashed green;
+			}
+			
+			li {
+				border: 1px dashed red;
+			}
+		</style>
+		<script src="tool-man/core.js"></script>
+		<script src="tool-man/events.js"></script>
+		<script src="tool-man/css.js"></script>
+		<script src="tool-man/coordinates.js"></script>
+		<script src="tool-man/drag.js"></script>
+		<script src="tool-man/dragsort.js"></script>
+		<script src="tool-man/cookies.js"></script>
+		<script>
+			window.onload = function () {
+				window.dragsort = ToolMan.dragsort();
+				dragsort.makeListSortable(document.getElementsByTagName("ol")[0])
+			}
+		</script>
+	</head>
+	<body>
+		<ol>
+			<li>one</li>
+			<li>two</li>
+			<li>three</li>
+			<li>four</li>
+			<li>five</li>
+			<li>six</li>
+			<li>seven</li>
+		</ol>
+	</body>
+</html>
