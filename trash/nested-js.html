@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Nested</title>
+	</head>
+	<body>
+		<script>
+(function () {
+	var inner = 'inner-value';
+	(function () {
+		debugger;
+	}.call(this));
+}).call({ a: 'a-value', b: 'a-value' });
+		</script>
+	</body>
+</html>
