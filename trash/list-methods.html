@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title></title>
+		<script>
+			window.onload = function () {
+				var objects = {
+					string: [String.prototype, ['anchor', 'big', 'blink', 'bold', 'charAt', 'charCodeAt', 'concat', 'constructor', 'fixed', 'fontcolor', 'fontsize', 'indexOf', 'italics', 'lastIndexOf', 'length', 'link', 'localeCompare', 'match', 'replace', 'search', 'slice', 'small', 'split', 'strike', 'sub', 'substr', 'substring', 'sup', 'toLocaleLowerCase', 'toLocaleUpperCase', 'toLowerCase', 'toString', 'toUpperCase', 'trim', 'trimLeft', 'trimRight', 'valueOf']],
+					array : [ Array.prototype, ['concat', 'constructor', 'every', 'filter', 'forEach', 'indexOf', 'join', 'lastIndexOf', 'length', 'map', 'pop', 'push', 'reduce', 'reduceRight', 'reverse', 'shift', 'slice', 'some', 'sort', 'splice', 'toLocaleString', 'toString', 'unshift']],
+					number: [Number.prototype, ['constructor', 'toExponential', 'toFixed', 'toLocaleString', 'toPrecision', 'toString', 'valueOf']],
+					objectProto: [Object.prototype, ['__defineGetter__', '__defineSetter__', '__lookupGetter__', '__lookupSetter__', 'constructor', 'hasOwnProperty', 'isPrototypeOf', 'propertyIsEnumerable', 'toLocaleString', 'toString', 'valueOf']],
+					Object: [Object, ['create', 'defineProperties', 'defineProperty', 'freeze', 'getOwnPropertyDescriptor', 'getOwnPropertyNames', 'getPrototypeOf', 'isExtensible', 'isFrozen', 'isSealed', 'keys', 'length', 'name', 'preventExtensions', 'prototype', 'seal']]
+				};
+				
+				var doc = document;
+				
+				var write = function (tag, text) {
+					var elem = doc.createElement(tag);
+					elem.innerHTML = text;
+					doc.body.appendChild(elem);
+				};
+				
+				for (var i in objects) {
+					write('h2', i);
+					var methods = objects[i][1];
+					var proto   = objects[i][0]
+					for (var k = methods.length; k--;) {
+						if (proto[ methods[k] ] == null) {
+							write('p', methods[k]);
+						}
+					}
+				}
+				
+			}
+		</script>
+	</head>
+	<body></body>
+</html>
