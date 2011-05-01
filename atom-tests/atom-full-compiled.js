@@ -176,28 +176,21 @@ provides: accessors
 
 	if (!standard && !nonStandard) throw new Error('Accessors are not supported');
 
-	var getAccessors = nonStandard ?
+	var lookup = nonStandard ?
 		function (from, key, bool) {
-			var g = from.__lookupGetter__(key), s = from.__lookupSetter__(key);
+			var g = from.__lookupGetter__(key), s = from.__lookupSetter__(key), has = !!(g || s);
 
-			if ( g || s ) {
-				if (bool) return true;
-				return {
-					get: g,
-					set: s
-				};
-			}
-			return bool ? false : null;
+			if (bool) return has;
+
+			return has ? { get: g, set: s } : null;
 		} :
 		function (from, key, bool) {
 			var descriptor = Object.getOwnPropertyDescriptor(from, key);
 			if (!descriptor) {
 				// try to find accessors according to chain of prototypes
 				var proto = Object.getPrototypeOf(from);
-				if (proto) return getAccessors(proto, key, bool);
-			}
-
-			if (descriptor && (descriptor.set || descriptor.get) ) {
+				if (proto) return accessors.lookup(proto, key, bool);
+			} else if ( descriptor.set || descriptor.get ) {
 				if (bool) return true;
 
 				return {
@@ -206,14 +199,18 @@ provides: accessors
 				};
 			}
 			return bool ? false : null;
-		}; /* getAccessors */
+		}; /* lookup */
 
-	var setAccessors = function (object, prop, descriptor) {
-		if (descriptor) {
-			if (nonStandard) {
+	var define = nonStandard ?
+		function (object, prop, descriptor) {
+			if (descriptor) {
 				if (descriptor.get) object.__defineGetter__(prop, descriptor.get);
 				if (descriptor.set) object.__defineSetter__(prop, descriptor.set);
-			} else {
+			}
+			return object;
+		} :
+		function (object, prop, descriptor) {
+			if (descriptor) {
 				var desc = {
 					get: descriptor.get,
 					set: descriptor.set,
@@ -222,32 +219,27 @@ provides: accessors
 				};
 				Object.defineProperty(object, prop, desc);
 			}
+			return object;
+		};
+
+	var accessors = {
+		lookup: lookup,
+		define: define,
+		has: function (object, key) {
+			return accessors.lookup(object, key, true);
+		},
+		inherit: function (from, to, key) {
+			var a = accessors.lookup(from, key);
+
+			if ( a ) {
+				accessors.define(to, key, a);
+				return true;
+			}
+			return false;
 		}
-		return object;
-	};
-	
-	var hasAccessors = function (object, key) {
-		return getAccessors(object, key, true);
 	};
 
-	var inheritAccessors = function (from, to, key) {
-		var a = getAccessors(from, key);
-
-		if ( a ) {
-			setAccessors(to, key, a);
-			return true;
-		}
-		return false;
-	};
-
-	atom.extend({
-		accessors: {
-			get: getAccessors,
-			set: setAccessors,
-			has: hasAccessors,
-			inherit: inheritAccessors
-		}
-	});
+	atom.extend({ accessors: accessors });
 })(Object);
 
 /*
@@ -643,6 +635,57 @@ atom.implement(atom.dom, {
 /*
 ---
 
+name: "Cookie"
+
+description: "todo"
+
+license: "[GNU Lesser General Public License](http://opensource.org/licenses/lgpl-license.php)"
+
+requires:
+	- atom
+
+provides: cookie
+
+...
+*/
+
+atom.extend({
+	cookie: {
+		get: function (name) {
+			var matches = document.cookie.match(new RegExp(
+			  "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
+			));
+			return matches ? decodeURIComponent(matches[1]) : null;
+		},
+		set: function (name, value, options) {
+			options = options || {};
+			var exp = options.expires;
+			if (exp) {
+				if (exp.toUTCString) {
+					exp = exp.toUTCString();
+				} else if (typeof exp == 'number') {
+					exp = exp * 1000 * Date.now();
+				}
+				options.expires = exp;
+			}
+
+			var cookie = [name + "=" + encodeURIComponent(value)];
+			for (var o in options) cookie.push(
+				options[o] === true ? o : o + "=" + options[o]
+			);
+			document.cookie = cookie.join('; ');
+
+			return atom.cookie;
+		},
+		del: function (name) {
+			return atom.cookie.set(name, null, { expires: -1 });
+		}
+	}
+});
+
+/*
+---
+
 name: "Uri"
 
 description: "Port of parseUri function"
@@ -833,7 +876,7 @@ extend(Class, {
 		}
 		var target = toProto ? this[prototype] : this;
 		for (var name in props) {
-			atom.accessors.set(target, name, { get: lambda(props[name]) });
+			atom.accessors.define(target, name, { get: lambda(props[name]) });
 		}
 		return this;
 	},
@@ -1093,7 +1136,7 @@ provides: Array
 ...
 */
 
-new function () {
+new function (undefined) {
 
 var slice = [].slice;
 
@@ -1126,6 +1169,11 @@ atom.extend(Array, {
 		for (var i in props.toKeys()) array.push(i in obj ? obj[i] : Default);
 		return array;
 	},
+	create: function (length, fn) {
+		var array = new Array(length);
+		for (var i = 0; i < length; i++) array[i] = fn(i, array);
+		return array;
+	},
 	toHash: function () {
 		for (var hash = {}, i = 0, l = this.length; i < l; i++) hash[i] = this[i];
 		return hash;
@@ -1138,6 +1186,14 @@ atom.implement(Array, {
 	},
 	get random(){
 		return this.length ? this[Number.random(0, this.length - 1)] : null;
+	},
+	// Correctly works with `new Array(10).fullMap(fn)`
+	fullMap: function (fn, bind) {
+		var mapped = new Array(this.length);
+		for (var i = 0, l = mapped.length; i < l; i++) {
+			mapped[i] = fn.call(bind, this[i], i, this);
+		}
+		return mapped;
 	},
 	contains: function (elem, fromIndex) {
 		return this.indexOf(elem, fromIndex) != -1;
@@ -1249,6 +1305,20 @@ atom.implement(Array, {
 			hex.push((bit.length == 1) ? '0' + bit : bit);
 		}
 		return (array) ? hex : '#' + hex.join('');
+	},
+
+	reduce: [].reduce || function(fn, value){
+		for (var i = 0, l = this.length; i < l; i++){
+			if (i in this) value = value === undefined ? this[i] : fn.call(null, value, this[i], i, this);
+		}
+		return value;
+	},
+
+	reduceRight: [].reduceRight || function(fn, value){
+		for (var i = this.length; i--;){
+			if (i in this) value = value === undefined ? this[i] : fn.call(null, value, this[i], i, this);
+		}
+		return value;
 	}
 });
 
@@ -1283,6 +1353,9 @@ new function () {
 		lambda : function (value) {
 			var returnThis = (arguments.length == 0);
 			return function () { return returnThis ? this : value; };
+		},
+		copier: function (value) {
+			return function () { return atom.clone(value); }
 		},
 		log: function (msg) {
 			var args = arguments.length ? arguments : null;
@@ -1548,6 +1621,15 @@ atom.implement(String, {
 	},
 	lcfirst : function () {
 		return this[0].toLowerCase() + this.substr(1);
+	},
+	trim: ''.trim || function () {
+		return this.trimLeft().trimRight();
+	},
+	trimLeft : ''.trimRight || function () {
+		return this.replace(/^\s+/, '');
+	},
+	trimRight: ''.trimLeft || function () {
+		return this.replace(/\s+$/, '');
 	}
 });
 
@@ -1586,7 +1668,7 @@ var getter = function (key, fn) {
 };
 
 atom.Class.Mutators.Generators = function(properties) {
-	for (var i in properties) atom.accessors.set(this.prototype, i, { get: getter(i, properties[i]) });
+	for (var i in properties) atom.accessors.define(this.prototype, i, { get: getter(i, properties[i]) });
 };
 
 };
