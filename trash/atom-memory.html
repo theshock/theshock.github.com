@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<head>
+	<title></title>
+</head>
+<button id="load">Load</button>
+<script>
+	document.getElementById('load').onclick = function () {
+		var script = document.createElement('script');
+		script.src= "http://libcanvas.github.com/files/js/atom.js?no-cache=" + Date.now();
+		document.head.appendChild( script );
+	};
+</script>
