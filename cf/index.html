@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<title>Canvas app</title>
+<body style="overflow:hidden">
+	<canvas width="200" height="200" style="position:relative"></canvas>
+</body>
+<script src="atom.js"></script>
+<script src="cf.js"></script>
+<script>
+atom.dom(function() {
+	var write = function (msg) {
+		atom.dom.create('p').text(msg).appendTo('body');
+	};
+	
+	var cf = new CF('canvas');
+	cf.circle([50, 50, 10]    , { fill: 'red'  , hover : { fill: 'blue' } })
+		.addEvent('mousedown', write.bind( window, 'circle mousedown' ));
+		
+	cf.rect  ([10, 10, 20, 20], { fill: 'green', hover : { fill: 'blue' } })
+		.addEvent('mousedown', write.bind( window, 'rect   mousedown' ));
+});
+</script>
