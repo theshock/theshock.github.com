@@ -98,8 +98,13 @@ var Mouse = atom.Class({
 	},
 	move: function (e) {
 		// Мы воспользуемся layer*, но на практике нужен более надёжный способ
-		this.x = e.layerX;
-		this.y = e.layerY;
+		if (e.layerX == null) { // opera
+			this.x = e.offsetX;
+			this.y = e.offsetY;
+		} else { // fx, chrome
+			this.x = e.layerX;
+			this.y = e.layerY;
+		}
 		
 		this.elements.forEach(function (el) {
 			el.hover = el.hasPoint(this.x, this.y)
