@@ -1,0 +1,350 @@
+Добрый день. Один из самых частых вопросов про LibCanvas сейчас - "С чего начать?". Согласен, порог вхождения в эту библиотеку чуть выше, чем в более простые canvas-библиотеки, потому в этом топике я раскрою основы LibCanvas - базовые понятия и принципы, отрисовка примитивных фигур, события мыши, клавиатуры, анимация, расширенный контекст, поведения. Постараюсь описать всё это с множеством примеров и максимально доступным языком.
+
+Надеюсь, статья даст ответы на вопросы: Что такое LibCanvas? Зачем он нужен и какие его преимущества? С чего начать?
+<habracut />
+<h2>Общие сведения</h2>
+LibCanvas - фреймворк для работы с Canvas и сопутствующими технологиями, который может применяться для разработки игр и других интерактивных приложений.
+
+Он построен на базе <a href="https://github.com/theshock/atomjs">AtomJS</a> - лёгкого JavaScript фреймворка, чем-то похожего на MooTools и jQuery. Есть вполне неплохая <a href="https://github.com/theshock/atomjs/tree/master/Docs">английская документация AtomJS</a> и, если вы использовали MooTools до этого, то вам будет достаточно просто осилить AtomJS.
+
+Последнюю версию LibCanvas можно получить <a href="https://github.com/theshock/libcanvas">в репозитории</a>, на GitHub также есть <a href="http://libcanvas.github.com/">ряд актуальных примеров</a> от очень простых до достаточно сложных. Многие принципы можно понять, изучив эти примеры. Есть <a href="https://github.com/theshock/libcanvas/tree/master/Docs/Ru">русская документация</a>, но многие части LibCanvas в ней пока не освещены. Со временем она будет наполнятся и расширяться. Надеюсь, кто-то мне поможет с переводом на английский)
+
+<h2>Core</h2>
+Весь код хранится в пространстве имен LibCanvas. Это хорошо тем, что библиотека не захламляет глобальное пространство имён. Тем не менее, есть и недостаток - достаточно многословный синтаксис в итоге:
+<source lang="javascript">
+var circle = new LibCanvas.Shapes.Circle( 100, 100, 50 );
+var circle = new LibCanvas.Shapes.Circle( 222, 222, 22 );
+</source>
+
+Это можно исправить используя статический метод LibCanvas.extract(). Он глобализует сам LibCanvas, чтобы в своём приложении вы могли использовать короткие имена классов:
+<source lang="javascript">
+LibCanvas.extract();
+
+var circle = new Circle( 100, 100, 50 );
+var circle = new Circle( 222, 222, 22 );
+</source>
+
+Другая алтернатива - использовать алиасы:
+<source lang="javascript">
+var Circle = LibCanvas.Shapes.Circle;
+
+var circle1 = new Circle( 100, 100, 50 );
+var circle2 = new Circle( 222, 222, 22 );
+</source>
+
+<h2>LibCanvas.Context2D</h2>
+Есть встроенный контекст LibCanvas. Его очень просто вызвать:
+<source lang="javascript">
+var context = document.getElementsByTagName('canvas')[0].getContext('2d-libcanvas');
+// or:
+var context = atom.dom('canvas').first.getContext('2d-libcanvas');
+</source>
+
+Обратите внимание, что оригинальный '2d' контекст всё так же доступен и не тронут, потому может смело использоваться в ваших приложениях:
+<source lang="javascript">
+var context = atom.dom('canvas').first.getContext('2d');
+</source>
+
+'2d-libcanvas' контекст обратно совместим с оригинальным контекстом(весь код, написанный для контекста '2d' заработает и в контексте '2d-libcanvas'), но он имеет следующие преимущества:
+1. <b>Chainable</b> - все методы можно вызывать цепочкой. Особо популярен такой метод стал с появлением jQuery:
+<source lang="javascript">
+context
+	.set({
+		  fillStyle: 'black',
+		strokeStyle: 'red'
+	})
+	.  fillRect(20, 20, 40, 40)
+	.strokeRect(50, 50, 100, 100);
+</source>
+
+2. <b>Именованные аргументы</b> - теперь можно передавать не просто набор символов, а хеш:
+<source lang="javascript">
+context.drawImage(img, 10, 15, 40, 45, 20, 25, 50, 55);
+// vs
+context.drawImage({
+	image: img,
+	crop : [10, 15, 40, 45],
+	draw : [20, 25, 50, 50]
+});
+</source>
+
+3. <b>Фигуры</b> - можно передавать фигуры, а не числа. Это особо удобно, когда у вас есть большое приложение с созданными объектами:
+<source lang="javascript">
+// отрисовка картинки:
+	context.drawImage( image, rect.from.x, rect.from.y, rect.width, rect.height );
+	// vs
+	context.drawImage( image, rect );
+
+// Заливка прямоугольника с сохранением состояния холста:
+	context.save();
+	context.fillStyle = 'red';
+	context.fillRect( rect.from.x, rect.from.y, rect.width, rect.height )
+	context.restore();
+	// vs:
+	context.fill( rect, 'red' );
+</source>
+
+4. <b>Расширение API</b> - тут целая серия удобств. Во-первых, более удобная работа с путями, текстом, картинками, трансформациями и т.д:
+<source lang="javascript">
+// Изображение с центром в определённой точке, повернутое вокруг оси:
+	// original ctx:
+	context.save();
+	context.translate(this.position.x, this.position.y);
+	context.rotate(this.angle);
+	context.translate(-this.image.width/2, -this.image.height/2);
+	context.drawImage(this.image, 0, 0);
+	context.restore();
+	
+	// vs
+	context.drawImage({
+		image : this.image,
+		center: this.position,
+		angle : this.angle
+	});
+
+// Текст:
+	context.text({
+		text: 'Test string \n with line breaks \n is here'
+		padding: [ 30, 50 ],
+		size: 20,
+		align: 'center'
+	})
+
+// Крутим холст вокруг оси:
+	context.translate( point.x,  point.y);
+	context.rotate(angle);
+	context.translate(-point.x, -point.y);
+
+	// vs:
+	context.rotate( angle, point );
+
+// Рисуем путь
+	context.beginPath( );
+	context.moveTo( mt.x, mt.y );
+	context.lineTo( lt.x, lt.y );
+	context.bezierCurveTo( bc1.x, bc1.y, bc2.x, bc2.y, bc.x, bc.y );
+	context.quadraticCurveTo( qc1.x, qc1.y, qc.x, qc.y );
+	context.closePath();
+	
+	// vs
+	context
+		.beginPath( mt )
+		.lineTo( lt );
+		.curveTo( bc, bc1, bc2 )
+		.curveTo( qc, qc1 )
+		.closePath();
+
+// Клипаем круг:
+	var circle = new Circle( 130, 120, 50 );
+
+	context.beginPath();
+	context.arc( circle.center.x, circle.center.y, circle.radius, 0, Math.PI * 2 );
+	context.closePath();
+	context.clip();
+	
+	// vs:
+	context.clip( circle );
+	
+// Очищаем весь холст:
+	context.clear( 0, 0, canvas.width, canvas.height );
+	// vs
+	context.clearAll();
+</source>
+
+И так далее. Думаю, вы и сами видите удобство встроенного контекста.
+
+<h2>Объект LibCanvas</h2>
+При конструировании LibCanvas создаётся объект LibCanvas.Canvas2D. Первым аргументом вы должны передать ссылку на необходимый элемент canvas (css-селектор, dom-объект, etc). Вторым можно передать дополнительные настройки - предельный fps, очистку перед перерисовкой, предзагрузку картинок <a href="https://github.com/theshock/libcanvas/blob/master/Docs/Ru/Classes/Core/Canvas2D.md">и другие</a>.
+<source lang="javascript">
+var libcanvas = new LibCanvas('#my-canvas');
+
+libcanvas instanceof LibCanvas; // true
+libcanvas instanceof LibCanvas.Canvas2D; // true
+
+// в свойстве можно получить расширенный контекст:
+libcanvas.ctx instanceof LibCanvas.Context2D; // true
+</source>
+
+Каждый кадр состоит из двух этапов. Первый - просчёт данных. Он выполняется каждый раз и отвечает исключительно за математические операции - передвижение объектов, коллизии и т.п. В этом слое не должно быть никакой перерисовки. Второй этап - это рендер. В ней находится часть, которая отвечает за перерисовку содержимого экрана и она будет выполнена только в случае каких-либо изменений на экране. Об этом можно сообщить на этапе просчёта вызовом метода <code>libcanvas.update()</code>.
+
+Добавить функцию в этап просчёта можно при помощи метода <code>libcanvas.addFunc()</code>, добавить функцию в этап рендера можно при помощи метода <code>libcanvas.addRender()</code>. Также, на этапе  рендера вызываются методы draw переданных объектов. Приблизительно код выглядит так:
+
+<source lang="javascript">
+libcanvas
+	.addFunc(function () {
+		scene.recount();
+		if (scene.somethingChanged()) {
+			libcanvas.update();
+		}
+	})
+	.addRender(function () {
+		// будет вызвано только после вызова libcanvas.update();
+		scene.drawAll();
+	});
+</source>
+
+Очень много приложений - статичны большую часть времени с перерисовкой только в моменты действия пользователя. Это поможет значительно сократить безсмысленную нагрузку на процессор.
+
+На практике <code>addRender</code> используется редко, т.к. очень удобно отрисовывать объекты методом <code>draw()</code> (об этом ниже).
+
+Всегда перерисовывайте что-то на экране только в случае присутствия изменений. Во многих приложениях такого базового механизма будет недостаточно, но это лучше, чем ничего.
+
+<h2>Point</h2>
+<a href="https://github.com/theshock/libcanvas/blob/master/Docs/Ru/Classes/Core/Point.md"><code>LibCanvas.Point</code></a> - один из базовых объектов. Он используется очень часто, является составляющей всех фигур и <a href="http://libcanvas.github.com/shapes/point.html">очень удобен для использования вне их</a>. В нём есть методы для определения растояния между двумя точками, углом, умножением точки, а также получением всех соседей.
+
+<source lang="javascript">
+// Проворачиваем точку A на 60 градусов вокруг точки B:
+	var A = new Point(10, 10),
+	    B = new Point(20, 20);
+
+	A.rotate( (60).degree(), B );
+
+// считаем сумму значений всех соседей клетки в матрице:
+	var sum = 0 +
+		matrix[p.y-1][p.x-1] + matrix[p.y-1][p.x] + matrix[p.y-1][p.x+1] +
+		matrix[p.y  ][p.x-1] +                      matrix[p.y  ][p.x+1] +
+		matrix[p.y+1][p.x-1] + matrix[p.y+1][p.x] + matrix[p.y+1][p.x+1] ;
+
+	// vs
+	var sum = point.neighbours.reduce(function(value, p) { return value + matrix[p.y][p.x]; }, 0);
+</source>
+
+
+<h2>Фигуры</h2>
+Фигуры содержатся в подпространстве имён <code>LibCanvas.Shapes.*</code> и глобализуются до коротких алиасов. Самые известные фигуры - это <code>Rectangle</code>, <code>Circle</code>, <code>Line</code>. Когда используете LibCanvas - вы должны осознать, что фигуры сами по себе не имеют внешнего вида, они не могут иметь внешнего вида - цвета или тени. За внешний вид отвечает объект, который использует фигуру, например LibCanvas.Ui.Shaper, сами же фигуры содержат в себе только математические операции - как пройти путь, пересечения, находится ли точка внутри фигуры, etc. Они - астральное, но не физическое тело.
+
+Это позволяет отделить поведение от внешнего вида. К примеру, у нас есть доска в арканоиде. На самом деле это картинка, но все действия мы можем производить как с простой фигурой:
+
+<source lang="javascript">
+var Unit = atom.Class({
+	initialize: function (rectangle, image) {
+		this.shape = rectangle;
+		this.image = image;
+	},
+	collision: function (anotherUnit) {
+		return this.shape.intersect( anotherUnit.shape );
+	},
+	draw: function () {
+		this.libcanvas.ctx.drawImage( this.image, this.shape );
+	}
+});
+</source>
+
+<a href="https://github.com/theshock/libcanvas/blob/master/Docs/Ru/Classes/Shapes/Rectangle.md"><code>Rectangle</code></a> - самая главная фигура. Она используется не только во время отрисовки прямоугольников и базовых математических операциях, но и во многих методах LibCanvas. Это может быть, например, метод context.drawImage, который принимает аргументами для вырезания и отрисовки прямоугольник или тайловый движок, у которого каждый элемент - это небольшой Rectangle. 
+
+Когда какому-нибудь методу требуется Rectangle-like аргумент - он может принять любой аргумент, похожий на прямоугольник. Например:
+<source lang="javascript">
+context.drawImage({
+	image: image,
+	crop: {
+		from: { x: 15, y: 10 },
+		size: { width: 50, height: 100 }
+	},
+	draw: [10,20,100,200]
+});
+</source>
+
+В таком случае crop и draw будут приведены внутри к Rectangle (или к другой необходимой фигуре), но с точки зрения производительности (при многократной перерисовке холста), а также с точки зрения архитектуры приложения - самый выгодный метод - это создание всех объектов во время инициализации приложения. Такое решение было принято специально для того, чтобы поощрять хорошую архитектуру.
+
+<source lang="javascript">
+var Item = atom.Class({
+	initialize: function (image) {
+		this.image = image;
+		this.cropRect = new Rectangle(15, 10,  50, 100);
+		this.drawRect = new Rectangle(10, 20, 100, 200);
+	},
+	draw: function () {
+		context.drawImage({
+			image: this.image,
+			crop : this.cropRect,
+			draw : this.drawRect
+		});
+	}
+});
+</source>
+
+Аналогичным образом используются и другие фигуры:
+<source lang="javascript">
+// Дуга:
+context.arc({
+	circle: new Circle( 100, 100, 50 ),
+	angle : [ (45).degree(), (135).degree() ]
+});
+
+// Отрисовка линии:
+context.stroke( new Line([13, 13], [42, 42]), 'red' );
+</source>
+
+<h2>Поведения</h2>
+Следующая часть - это <a href="https://github.com/theshock/libcanvas/tree/master/Docs/Ru/Classes/Behaviors"><code>LibCanvas.Behavoiurs.*</code></a>. Каждое из них - это просто <a href="http://ru.wikipedia.org/wiki/Mixin">примесь</a>, которая добавляет вашему классу определённую функциональность или поведение. К примеру, <code>Animatable</code> добавляет метод <code>animate</code> который позволяет изменять свойства объекта плавно, а <code>Drawable</code> позволяет объектам вашего класса быть добавленными в объект LibCanvas для отрисовки.
+
+Между прочим, именно Drawable и является основой отрисовки в LibCanvas. Смесь Drawable и Shapes.* позволит отрисовать на холст любую фигуру, а добавление других поведений придаст этой фигуре дополнительную функциональность.
+<source lang="javascript">
+var Item = atom.Class({
+	Implements: [ Drawable, Draggable ],
+	initialize: function (shape) {
+		this.shape = shape;
+	},
+	draw: function () {
+		this.libcanvas.ctx.stroke( this.shape, 'red' );
+	}
+});
+
+libcanvas.addElement(
+	new Item( new Rectangle(50, 50, 100, 100) ).draggable()
+);
+</source>
+
+На самом деле - подобный паттерн для отрисовки фигур приходилось создавать достаточно часто, потому уже реализован <code>Ui.Shaper</code>:
+
+<source lang="javascript">
+libcanvas.createShaper({
+	shape : new Rectangle(50, 50, 100, 100),
+	stroke: 'red'
+}).draggable();
+</source>
+
+<h2>Клава и мышка</h2>
+Работа с клавиатурой достаточно проста. Достаточно при инициализации приложения вызвать метод <code>libcanvas.listenKeyboard()</code> и вы можете использовать метод <code>libcanvas.getKey( keyName )</code> при необходимости, чтобы узнать состояние клавиши:
+
+<source lang="javascript">
+update: function () {
+	if( this.libcanvas.getKey('aup') ) {
+		this.move();
+	}
+}
+</source>
+
+Работу с мышью стоит разобрать. Во-первых, если вы хотите использовать мышь в своём приложении - обязательно вызовите метод <code>libcanvas.listenMouse()</code>. В целях оптимизации события мыши не анализируются до его вызова, ведь есть приложения, которым мышь не нужна. После этого можно легко подписываться на события мыши, добавляя элемент в объект Mouse:
+<source lang="javascript">
+this.libcanvas.mouse.subscribe( element );
+</source>
+
+Важно, чтобы значением свойства shape элемента была одна из фигур (<code>LibCanvas.Shapes.*</code>), было свойство zIndex и он реализовал класс <code>atom.Class.Events</code>. На практике всё это скрыто за поведениями и когда вы вызываете, например, метод <code>draggable()</code> поведения <code>Draggable</code> объект автоматически подписывается на события мыши. Если же вам надо только слушать события мыши, то достаточно реализовать поведение <code>MouseListener</code> и вызвать метод <code>listenMouse</code> у элемента. Тем не менее, всё-еще остаётся самый главный момент - у элемента дожно быть свойство <code>Shape</code> с какой-либо фигурой внутри. Когда события мыши у вашего объекта слушаются - вы можете подписаться на любое из следующих событий:
+
+<source lang="javascript">
+/*
+	- click
+	- mouseover
+	- mousemove
+	- mouseout
+	- mouseup
+	- mousedown
+	- away:mouseover
+	- away:mousemove
+	- away:mouseout
+	- away:mouseup
+	- away:mousedown
+*/ // Например:
+
+element
+	.listenMouse()
+	.addEvent('click', function () {
+		alert('element clicked');
+	});
+</source>
+
+<h2>Заключение</h2>
+Я описал здесь основы теоретической части разработки на LibCanvas. В ней не раскрыты многие интересные возможности и принципы, но её цель - объяснить идеологию и показать читателю, с чего начать.
+
+Тема следующей статьи - практическая часть разработки на LibCanvas.
