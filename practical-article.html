@@ -1,0 +1,213 @@
+<img src="http://habrastorage.org/storage/67d6106e/93a6fa81/6e2bf6bf/aa43a5c8.png"/>
+
+Это продолжение статьи про основы LibCanvas. Если первая часть затрагивала теоретические засады, то в этой части мы перейдём к практике и постараемся реализовать совсем базовые и простые вещи. Цель статьи - осилить самые основы LibCanvas, мы напишем очень простые скрипты, малопригодные для использования в реальной жизни, но вы их можете развить во что-то великое.
+
+<habracut />
+
+<h2>HTML</h2>
+Структура html-файла очень простая:
+<source lang="javascript">
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<script src="atom.js"></script>
+		<script src="libcanvas.js"></script>
+		<script src="application.js"></script>
+	</head>
+	<body>
+		<canvas></canvas>
+	</body>
+</html>
+</source>
+
+Необходимо подключить последние <a href="https://github.com/theshock/atomjs">AtomJS</a> и <a href="https://github.com/theshock/libcanvas">LibCanvas</a>. Новичкам лучше использовать <code>*-full-compiled</code> версии с репозитория.
+
+Далее мы будем рассматривать содержимое <code>application.js</code>
+
+<h2>Простая отрисовка в холст</h2>
+Мы всё так же можем отрисовывать в холст при помощи контекста. Необходимо дождаться полной загрузки DOM, получить элемент canvas, его контекст и отрисовать две фигуры. Я сразу же глобализовал всё содержимое LibCanvas. В дальнейшем, когда я буду показывать примеры - будет подразумеваться только содержимое onready-функции.
+
+Сейчас мы просто нарисуем зелёный прямоугольник и красный круг на светло-кофейный холст:
+<source lang="javascript">
+LibCanvas.extract();
+
+atom.dom(function() {
+	var canvas  = atom.dom('canvas').first;
+	var context = canvas.getContext('2d-libcanvas');
+
+	context
+		.fillAll( '#efebe7' )
+		.fill( new Rectangle( 75, 75, 30, 30 ), 'green' )
+		.fill( new Circle   ( 50, 50, 20 )    , '#c00'  );
+});
+</source>
+<a href="http://theshock.github.com/libcanvas/lessons/context.html"><img src="http://habrastorage.org/storage/303afb2e/e6199223/0123229a/147065f2.png" /></a>
+
+<h2>Анимация</h2>
+Но такой подход позволяет отрисовывать только какие-нибудь статичные картинки. Для чего-нибудь интерактивного необходимо создать объект LibCanvas. Сделаем очень простое приложение - чёрный холст заполняется случайными прямоугольниками зелёного цвета.
+Обратите внимание на два важных момента:
+1. По-умолчанию холст очищается каждый кадр, потому необходимо выключить это поведение по-умолчанию при помощи <code>{ clear: null }</code>
+2. Функция, переданная в start относится к этапу рендера, потому она не будет вызываться без обновления холста, чего мы добились благодаря <code>.addFunc( libcanvas.update )</code>. На самом деле это плохое решение, но в данном случае оно - подходит.
+
+
+<source lang="javascript">
+var libcanvas = new LibCanvas('canvas', { clear: null });
+
+libcanvas.ctx.fillAll('black');
+
+libcanvas
+	.start(function () {
+		this.ctx.fill(
+			new Rectangle({
+				from: this.ctx.rectangle.getRandomPoint(),
+				size: [ 2, 2 ]
+			}), 'green'
+		);
+	})
+	.addFunc( libcanvas.update );
+</source>
+
+<h2>Объекты</h2>
+Теперь добавим объект. Пускай это будет отрезок чёрного цвета, который будет вращаться вокруг одной из своих точек. В этот раз нам необходимо очищать холст перед отрисовкой следующего кадра, потому мы не будет отменять clear. Смотрим код и читаем комментарии:
+
+<source lang="javascript">
+var Item = atom.Class({
+	Implements: [ Drawable ],
+	// В конструкторе мы принимаем два аргумента -
+	// Point - центр вращения и скорость вращения в радианах за секунду
+	initialize: function (center, speed) {
+		this.line = new Line( center,
+			// Мы клонируем и смещаем точку вправо так мы получаем
+			// ещё одну точку в двадцати пикселях от текущей
+			center.clone().move([ 20, 0 ])
+		);
+		// время передаётся в милисекундах, а скорость указана в миллисекундах
+		// потому необходимо привести скорость к формату "радиан/миллисекунду"
+		this.speed = speed / 1000;
+	},
+	update: function (time) {
+		// мы вращаем вторую точку прямой вокруг первой
+		this.line.to.rotate(
+			// для того, чтобы скорость вращения не зависела от fps мы
+			// умножаем скорость на прошедшее время. Если fps низкий, то
+			// обновляться будет реже, но изменения будут на больший угол
+			this.speed * time,
+			this.line.from
+		);
+		// Необходимо сообщить libcanvas, что изменился
+		// внешний вид холста и надо бы его перерисовать
+		this.libcanvas.update();
+	},
+	draw: function () {
+		// просто рисуем прямую
+		this.libcanvas.ctx
+			.stroke( this.line, 'black' );
+	}
+});
+
+var libcanvas = new LibCanvas('canvas');
+
+// Мы конструируем новый объект
+// Обратите внимание на запись угла. Человеку обычно привычнее считать угол в градусах
+// В программировании принято хранить угол в радианах.
+// Такая запись позволяет легко получить радианы из градусов
+var item = new Item( new Point(50, 50), (180).degree() );
+
+
+libcanvas.addElement( item )
+	// Очень важно не забыть "запустить" LibCanvas, он ждёт вашей команды "start"
+	.start()
+	// обратите внимание, что если мы просто передадим "item.update", то он будет вызван
+	// с неверным контекстом, потому привязываем его при помощи bind к объекту:
+	.addFunc( item.update.bind(item) );
+</source>
+
+У нас получилась <a href="http://theshock.github.com/libcanvas/lessons/rotating-item.html">крутящаяся стрелочка</a>.
+
+<h2>Реакция на мышь</h2>
+Давайте возьмём нашу стрелочку в красный круг, который можно таскать. Это достаточно просто, я покажу, что изменилось, как видите, всего несколько строчек. Обратите внимание, что я создал свойство <code>shape</code>, а не <code>circle</code>. Это необходимо для Draggable.
+
+<source lang="javascript">
+var Item = atom.Class({
+	Implements: [ Drawable, Draggable /* Таскаемый */ ],
+	[...]
+	initialize: function (center, speed) {
+		[...]
+		// создаём круг
+		this.shape = new Circle( center, 25 );
+	},
+	[...]
+	draw: function () {
+		[...]
+			.stroke( this.shape, '#c00' );
+	}
+});
+
+[...]
+libcanvas.listenMouse();
+item.draggable()
+</source>
+
+Мы видим, <a href="http://theshock.github.com/libcanvas/lessons/circle-arrow-wrong.html">что практически всё заработало</a>, но есть ошибка, когда мы тягаем круг - стрелка меняет свою длину. Секрет в том, что, когда мы перемещаем круг, также перемещается точка <code>center</code>, которая является началом отрезка. Конец отрезка остаётся на месте и начинает вертеться по новой траектории. Его необходимо смещать вместе с началом. Это очень легко сделать, подписавшись на событие move у точки:
+
+<source lang="javascript">
+initialize: function (center, speed) {
+	[...]
+	// Необходимо, чтобы вторая точка двигалась вместе с первой
+	center.addEvent('move', function (diff) {
+		this.line.to.move(diff);
+	}.bind(this))
+},
+</source>
+
+<h2>Секундомер</h2>
+Теперь добавим ещё одну стрелку и реализуем таким образом секундомер - времени, которое прошло с момента захода на страницу. Код немножко измениться, но, в основном, он будет очень похож на предыдущий, потому я прокомментирую только важные участки и приведу только код класса:
+
+<source lang="javascript">
+var StopWatch = atom.Class({
+	Implements: [ Drawable, Draggable ],
+	initialize: function (center) {
+		this.center   = center;
+		this.millisec = this.line();
+		this.seconds  = this.line();
+		this.minutes  = this.line();
+		this.shape    = new Circle( center, 25 );
+
+		center.addEvent('move', function (diff) {
+			// мы вызываем метод "move" с параметром "diff" у всех точек
+			[this.millisec.to, this.seconds.to, this.minutes.to].invoke('move', diff);
+		}.bind(this));
+	},
+	// Метод для удобного создания линии
+	line: function () {
+		return new Line( this.center, this.center.clone().move([0, -20]) );
+	},
+	update: function (time) {
+		var full = (360).degree();
+
+		// Методы toSeconds, toMinutes и toHours взяты из LibCanvas.Utils.Math
+		// Миллисекундная стрелка должна сделать полный оборот за секунду
+		this.millisec.to.rotate( full * time.toSeconds(), this.center );
+		// Секундная - за минуту
+		this.seconds .to.rotate( full * time.toMinutes(), this.center );
+		// Минутная - за час
+		this.minutes .to.rotate( full * time.toHours()  , this.center );
+		this.libcanvas.update();
+	},
+	draw: function () {
+		this.libcanvas.ctx
+			.stroke( this.shape   , '#c00' )
+			.stroke( this.millisec, '#999' )
+			.stroke( this.seconds , '#000' )
+			.stroke( this.minutes , '#090' );
+	}
+});
+</source>
+
+<a href="http://theshock.github.com/libcanvas/lessons/stopwatch.html">Вот, получилось!</a>
+
+<h2>Заключение</h2>
+Да, порог вхождения высок. Но взамен вы получаете высокооптимизированное приложение, расширяемость, хорошую архитектуру и мощный инструментарий. Надеюсь статьи пролили свет на LibCanvas.
+
+Если у вас всё-ещё есть вопросы - можете смело писать в комментарии, на емейл shocksilien@gmail.com или в джаббер shock@jabber.com.ua
