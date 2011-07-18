@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+
+<!--
+Google HTML5 slide template
+
+Authors: Luke Mahé (code)
+Marcin Wichary (code and design)
+
+Dominic Mazzoni (browser compatibility)
+Charles Chen (ChromeVox support)
+
+URL: http://code.google.com/p/html5slides/
+-->
+
+<html>
+   <head>
+      <title>Presentation</title>
+
+      <meta charset='utf-8'>
+      <script src='slides.js'></script>
+   </head>
+
+   <style></style>
+
+   <body style='display: none'>
+      <section class='slides layout-regular template-default'>
+
+
+         <article>
+            <h1>Рефакторинг крупных проектов с нуля</h1>
+            <p>Павел Пономаренко</p>
+         </article>
+
+
+         <article class='smaller'>
+            <q>
+               Пишите код так, как будто сопровождать его будет склонный к насилию психопат, который знает, где вы живете
+            </q>
+            <div class='author'>
+               Стив Макконнелл
+            </div>
+         </article>
+
+         <article class='smaller'>
+            <h3>
+            Разные директории для внешних файлов
+            </h3>
+            <section>
+               <pre>
+// Структура:
+/files
+   /images
+      bullet.jpg
+      bg-main.jpg
+/subapp
+   /files
+      /images
+         bullet.jpg
+         bg-main.jpg
+   index.php // <== Мы здесь
+index.php
+config.php
+
+// Вышеприведенный пример имеет ужасное свойство
+// Это две разных картинки:
+&lt;img src=" files/images/bullet.jpg" />
+&lt;img src="/files/images/bullet.jpg" />
+               </pre>
+            </section>
+         </article>
+
+         <!-- - - - - - - - - - - - - - - -->
+
+         <article>
+            <h3>
+               Одно имя, разные файлы
+            </h3>
+            <section>
+               <pre>
+// forum.js
+function nav () {
+   // do smth
+}
+
+// index.js
+function nav () {
+   // do smth else
+} </pre>
+            </section>
+            <section>
+               <pre>
+function get_user() {
+   // функция перенесена в secure.func.php
+   $user = get_user();
+   return $user;
+}</pre>
+            </section>
+         </article>
+
+         <!-- - - - - - - - - - - - - - - -->
+
+         <article class='smaller'>
+            <h3>
+               Глобальные переменные, непонятные имена.
+            </h3>
+            <section>
+               <pre>
+function show_regions(){
+   if(lll == "l"){
+      return;
+   }
+   // code
+} </pre>
+            </section>
+            <section>
+               <pre>
+// Или так:
+function nav(){
+   if(pr == "r"){
+      // независимый блок кода
+   }
+   if(pr == "a1"){
+      // независимый блок кода
+   }
+   if(pr == "a2"){
+      // независимый блок кода
+   }
+}
+
+// С таким вызовом:
+pr = 'a1';
+nav(); </pre>
+            </section>
+         </article>
+
+         <!-- - - - - - - - - - - - - - - -->
+
+         <article class='smaller'>
+            <h3>
+               Мусор
+            </h3>
+            <section>
+               <pre>
+function secure2() {
+   secure();
+}
+
+function secure() {
+   secure3();
+}
+
+function secure3() {
+   if (!check_session()) {
+      $cookie = try_cookie();
+      tiny_login($cookie['login'], $cookie['pass'], 1);
+      if (check_session()) {
+            $ret = true;
+      } else {
+            $ret = false;
+      }
+   } else {
+      $ret = true;
+   }
+
+   if (!$ret) {
+      $_SESSION['loginerror'] = 'Ошибка авторизации';
+      header('location:(ссылка)');
+   }
+}</pre>
+            </section>
+         </article>
+
+         <!-- - - - - - - - - - - - - - - -->
+
+         <article class='smaller'>
+            <h3>
+               Остатки копипаста
+            </h3>
+            <section>
+               <pre>
+function add_on_map(){
+   // ...
+   zoom_listener = google.maps.event.addListener(map, 'zoom_changed', save_data);  
+   move_listener = google.maps.event.addListener(map, 'drag', save_data); 
+   zoom_listener = google.maps.event.addListener(map, 'zoom_changed', save_data);  
+   move_listener = google.maps.event.addListener(map, 'drag', save_data);
+   // ...
+   var pts = [];
+   var pts = $('.points');
+   for (var i = 0; i < pts.length; i++) {
+      var markk = $(pts[i]).text();
+      var markk = $(pts[i]).text().replace(/,$/, '');
+      var pts_lat = $(pts[i]).attr('lat');
+      var pts_lng = $(pts[i]).attr('lng');
+   // ...
+}</pre>
+            </section>
+            <h3>
+               Смешение подходов
+            </h3>
+            <section>
+               <pre>
+function router(p, st) {
+   var address = document.getElementById("address1").value;
+   var radius = document.getElementById("radius").value;
+   var lat1 = $("#lat1").val();
+   var lng1 = $("#lng1").val();</pre>
+            </section>
+         </article>
+
+         <article class='smaller'>
+            <q>
+               Если есть возможность отказаться от полного рефакторинга - откажитесь
+            </q>
+         </article>
+
+         <article>
+            <h3>Спасибо за внимание!</h3>
+            <ul>
+               <li>Павел Пономаренко
+               <li>twitter: p_ponomarenko
+               <li>email: shocksilien@gmail.com
+               <li>github: theshock
+               <li>habrahabr: theshock
+               <li>jabber: shock@jabber.com.ua
+         </article>
+      </section>
+   </body>
+</html>
