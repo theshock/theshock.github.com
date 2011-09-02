@@ -1,0 +1,88 @@
+html {
+	background : black;
+	color      : white;
+	font       : 14px sans-serif;
+}
+table.map {
+	border-collapse : collapse;
+	margin  : 0;
+	padding : 0;
+}
+table.map td {
+	border : 1px solid black;
+	height : 24px;
+	width  : 24px;
+}
+table.map td.t {
+	border-top-color    : white;
+}
+table.map td.r {
+	border-right-color  : white;
+}
+table.map td.b {
+	border-bottom-color : white;
+}
+table.map td.l {
+	border-left-color   : white;
+}
+table.map td.start {
+	background : #0f0;
+}
+table.map td.finish {
+	background : #f00;
+}
+table.map td.active {
+	background : #ccc;
+}
+.unit {
+	border : 4px solid transparent;
+	height : 0;
+	margin : auto;
+	width  : 0;
+	line-height: 0;
+}
+.unit-top {
+	border-bottom : 12px solid #c3c;
+	border-top    : 0;
+}
+.unit-right {
+	border-left   : 12px solid #c3c;
+	border-right  : 0;
+}
+.unit-bottom {
+	border-top    : 12px solid #c3c;
+	border-bottom : 0;
+}
+.unit-left {
+	border-right  : 12px solid #c3c;
+	border-left   : 0;
+}
+select, input {
+	margin : 4px;
+	padding: 2px;
+	border : 1px solid black;
+	font-size : 14px;
+}
+input.size {
+	width : 180px;
+}
+select, input.submit {
+	display : block;
+	width : 406px;
+}
+label {
+	display : block;
+	width : 400px;
+	margin : 4px;
+	padding: 2px;
+	border : 1px solid black;
+	background : white;
+	color: black;
+	font-size : 14px;
+}
+a {
+	color : #ddd;
+}
+a:hover {
+	text-decoration : none;
+}
