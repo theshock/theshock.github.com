@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Opera full-screen bug</title>
+	<body>
+		<script>
+			image = new Image();
+			image.src = '/opera-fullscreen/html5-logo-small.png';
+			function showWidth() {
+				var p = document.createElement( 'p' );
+				p.innerHTML = image.width;
+				document.body.appendChild( p );
+			}
+		</script>
+		<p>Click button several times, than - F11 and click buttons else several times</p>
+		<button onclick="showWidth()">Show image width</button>
+	</body>
+</html>
