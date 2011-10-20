@@ -7,9 +7,15 @@
 		<script>
 			image = new Image();
 			image.src = '/opera-fullscreen/html5-logo-small.png';
+			if (document.location.search.indexOf('fixed') > 0) {
+				image.onload = function () {
+					image.width  = image.width;
+					image.height = image.height;
+				};
+			}
 			function showWidth() {
 				var p = document.createElement( 'p' );
-				p.innerHTML = image.width;
+				p.innerHTML = image.width + 'x' + image.height;
 				document.body.appendChild( p );
 			}
 		</script>
