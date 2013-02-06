@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+  <head>
+		<title>Google Chrome Frame & Big Canvas Trouble</title>
+		<meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=IE8">
+		<style>canvas { border: 1px dashed red }</style>
+	</head>
+	<body>
+
+		<p>512x128 / 514x128</p>
+		<canvas width="512" height="128"></canvas><br />
+		<canvas width="514" height="128"></canvas>
+
+		<p>256x256 / 257x256</p>
+		<canvas width="256" height="256"></canvas>
+		<canvas width="257" height="256"></canvas>
+
+		<script>
+[].slice.call(document.querySelectorAll('canvas'))
+	.forEach(function (canvas) {
+		var x, ctx;
+
+		x   = -64;
+		ctx = canvas.getContext('2d');
+
+		function next () {
+			ctx.clearRect( x, 16, 64, 64 );
+			x = x>canvas.width ? -64 : x+8;
+			ctx. fillRect( x, 16, 64, 64 );
+			setTimeout(next, 100);
+		}
+
+		next();
+	});
+		</script>
+
+	</body>
+</html>
+
