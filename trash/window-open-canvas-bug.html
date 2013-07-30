@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+ 
+  <head>
+    <meta charset="UTF-8" />
+    <title>window.open and canvas bug</title>
+  </head>
+ 
+  <body>
+    <canvas width="300" height="300"></canvas>
+    <p>
+    <a href="http://example.com/">Click here with "Ctrl+Click", then go to new tab, then go to this tab</a>
+  </body>
+ 
+  <script>
+    var ctx = document
+      .querySelector('canvas')
+      .getContext('2d');
+  
+    ctx.fillStyle = '#ff0000';
+    ctx.fillRect(0,0,300,300);
+  
+    document
+      .querySelector('a')
+      .addEventListener('click', function (e) {
+        window.open( 'http://example.com/', '_blank' );
+        e.preventDefault();
+      });
+  </script>
+
+</html>
+
