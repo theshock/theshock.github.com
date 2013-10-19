@@ -10,12 +10,11 @@
 			varying vec2 vTextureCoord;
 
 			uniform sampler2D uSampler;
+			varying float outZNorm;
 
 			void main(void) {
 				vec4 textureColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
-				gl_FragColor = vec4(textureColor.rgb, textureColor.a);
-				/*gl_FragColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));*/
-			/*gl_FragColor = vec4(vTextureCoord.s, vTextureCoord.t, vTextureCoord.s, 1.0);*/
+				gl_FragColor = vec4(mix(textureColor.rgb, vec3(0.0, 0.0, 0.0), 1.0 - outZNorm), textureColor.a);
 			}
 		</script>
 
@@ -26,16 +25,20 @@
 			uniform mat4 uMVMatrix;
 			uniform mat4 uPMatrix;
 
+			varying float outZNorm;
 			varying vec2 vTextureCoord;
 
 			void main(void) {
 				gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+
+				float fogEnd = 20.0;
+				float fogStart = 0.1;
+				outZNorm = clamp((fogEnd - gl_Position.z) / (fogEnd - fogStart), 0.0, 1.0);
 				vTextureCoord = aTextureCoord;
 			}
 		</script>
 
 		<script src="js/lib/atom.js"></script>
-		<script src="js/lib/libcanvas.js"></script>
 		<script src="js/lib/glMatrix.js"></script>
 		<script src="js/lib/utils.js"></script>
 		<script src="js/lib/vertexes.js"></script>
@@ -43,13 +46,12 @@
 		<script src="js/controller.js"></script>
 		<script src="js/render.js"></script>
 		<script src="js/player.js"></script>
-		<script src="js/map.js"></script>
-		<script src="old-contr.js"></script>
+		<script src="js/voxel.js"></script>
 	</head>
 
 
-	<body style="background:#111">
-		<canvas width="1000" height="500"></canvas>
+	<body style="background:#111; color:#fc9; font: 13px monospace;">
+		<canvas width="800" height="500"></canvas>
 	</body>
 </html>
 

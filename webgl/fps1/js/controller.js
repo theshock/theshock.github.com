@@ -1,43 +1,38 @@
-/** @class Eye.Controller */
-atom.declare( 'Eye.Controller', {
+/** @class Controller */
+atom.declare( 'Controller', {
 
 	initialize: function () {
 		atom.ImagePreloader.run({
-			textures: 'textures-0.png',
-			player  : 'player.png'
+			textures: 'textures.png'
 		}, this.start, this);
 	},
 
 	player: null,
+	render: null,
 
 	start: function (images) {
-		this.images = images;
-		this.map = new Eye.Map(this);
-		this.app = new App({ size: this.map.size });
-		this.app.resources.set({ images: images });
-		this.map.appendTileEngine();
+		var onTick = this.onTick.bind(this);
 
-		this.layer = this.app.createLayer({ name: 'objects', invoke: true });
-
-		this.player = new Eye.Player( this.layer, {
-			controller: this,
-			position: new Point(10, 5)
-		});
-
-		this.render = new Eye.Render(this.player, this.map, images.get('textures'));
+		this.player = new Player();
+		this.render = new Render(this.player, Voxel.baseWorld(), images.get('textures'));
 
 		setTimeout(function () {
-			atom.frame.add(this.render.draw.bind(this.render));
-		}.bind(this), 100);
+			atom.frame.add( onTick );
+		}, 100);
 
 		this.requestPointerLock(atom.dom('canvas').first);
+	},
+
+	onTick: function (time) {
+		this.player.onTick(time);
+		this.render.onTick(time);
 	},
 
 	requestPointerLock: function (element) {
 		var player = this.player;
 
 		function onMove (e) {
-			player.pointer(new Point(e.movementX, e.movementY));
+			player.pointer(e.movementX, e.movementY);
 		}
 
 		atom.dom(element).bind('click', function () {
@@ -49,5 +44,5 @@ atom.declare( 'Eye.Controller', {
 
 
 atom.dom(function () {
-	var controller = new Eye.Controller();
+	new Controller();
 });

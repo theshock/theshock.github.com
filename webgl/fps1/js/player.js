@@ -1,224 +1,132 @@
-/** @class Eye.Player */
-atom.declare( 'Eye.Player', App.Element, {
-
-	angle: (45).degree(),
-
-	vShift: 0,
-	height: 0,
-	origHeight: 0.4,
+/** @class Player */
+atom.declare( 'Player', {
 
 	speed: {
-		rotate: (90).degree(),
-		vert: (0.1).degree(),
-		move: 3
+		rotate  : 0.05,
+		movement: 3
 	},
 
-	configure: function () {
-		this.height = this.origHeight;
-		this.controller = this.settings.get('controller');
-		this.position   = this.settings.get('position');
-		this.animatable = new atom.Animatable(this);
+	initialize: function () {
+		this.trace = atom.trace();
 
-		this.shape = new Circle(0, 0, 8);
-
-		atom.Keyboard().events.add({
-			'space'   : this.jump   .bind(this),
-			'shift'   : this.sitDown.bind(this),
-			'shift:up': this.sitUp  .bind(this)
-		});
+		this.position   = vec3.create([13, 13, 13]);
+		this.direction  = vec3.create([-0.5, -0.5, -0.5]);
 
 		atom.Keyboard().events.add(
 			['aup', 'adown', 'aright', 'aleft', 'w', 's', 'd', 'a', 'space', 'shift'],
-			Mouse.prevent
+			function (e) {e.preventDefault()}
 		);
-
-		this.updateShape();
 	},
 
-	jumping: false,
-	jump: function (e) {
-		if (!this.jumping && !this.sitting) {
-			this.jumping = true;
-			this.animateHeight((this.origHeight*2).limit(0,0.99), function () {
-				this.animateHeight(this.origHeight, function () {
-					this.jumping = false;
-				});
-			})
-		}
-	},
-
-	sitting: false,
-	sitDown: function (e) {
-		if (!this.jumping && !this.sitting) {
-			this.sitting = true;
-			this.animateHeight(this.origHeight/2, function (){});
-		}
-	},
-
-	sitUp: function (e) {
-		if (this.sitting) {
-			this.animateHeight(this.origHeight, function () {
-				this.sitting = false;
-			});
-		}
-	},
-
-	animateHeight: function (target, onComplete) {
-		this.animatable.animate({
-			fn: target > this.height ? 'sine-out' : 'sine-in',
-			time: (target - this.height).abs() * 1000,
-			props: { height: target },
-			onTick: this.redraw,
-			onComplete: onComplete.bind(this)
-		});
-	},
-
-	updateShape: function () {
-		this.shape.center
-			.set(this.position)
-			.mul(this.controller.map.cellSize);
-	},
-
-	rotate: function (time) {
-		this.angle = (this.angle + this.speed.rotate * time / 1000).normalizeAngle();
-	},
-
-	strafe: function (time) {
-		this.shiftPosition(time, (90).degree());
-	},
-
-	move: function (time) {
-		this.shiftPosition(time, 0);
-	},
-
-	vert: function (time) {
-		this.vShift = (this.vShift + (this.speed.vert * time)).limit(-(60).degree(), (60).degree());
-	},
-
-	shiftPosition: function (time, angleAdd) {
+	getStrafeVector: function () {
 		var
-			map = this.controller.map,
-			pos = this.position,
-			radius = 0.25,
-			factor =  this.speed.move * time / 1000 / (this.sitting ? 2 : 1);
+			dir = this.direction,
+			strafe = vec3.create([dir[0], 0, dir[2]]),
+			dirVec = vec3.create([dir[0], 1, dir[2]]);
 
-		var toX = pos.x + Math.cos(this.angle + angleAdd) * factor;
-		var toY = pos.y + Math.sin(this.angle + angleAdd) * factor;
-
-		var blockX = ~~toX;
-		var blockY = ~~toY;
-
-		if (map.isBlocked(blockX, blockY)) return;
-
-
-		var blockTop    = map.isBlocked(blockX,blockY-1);
-		var blockBottom = map.isBlocked(blockX,blockY+1);
-		var blockLeft   = map.isBlocked(blockX-1,blockY);
-		var blockRight  = map.isBlocked(blockX+1,blockY);
-
-		if (blockTop && toY - blockY < radius) {
-			toY = pos.y = blockY + radius;
-		}
-		if (blockBottom && blockY+1 - toY < radius) {
-			toY = pos.y = blockY + 1 - radius;
-		}
-		if (blockLeft && toX - blockX < radius) {
-			toX = pos.x = blockX + radius;
-		}
-		if (blockRight && blockX+1 - toX < radius) {
-			toX = pos.x = blockX + 1 - radius;
-		}
-
-		function checkCorner (aX, aY) {
-			if (!map.isBlocked(blockX+aX, blockY+aY)) return;
-
-			var dX, dY;
-
-			dX = toX - blockX + (aX > 0 ? 1 : 0);
-			dY = toY - blockY + (aY > 0 ? 1 : 0);
-
-			dX *= dX;
-			dY *= dY;
-
-			if (dX+dY < radius*radius) {
-				if (dX > dY)
-					toX = blockX + radius;
-				else
-					toY = blockY + radius;
-			}
-		}
-
-		if (!(blockLeft  && blockTop)) checkCorner(-1, -1);
-		if (!(blockRight && blockTop)) checkCorner(+1, -1);
-		if (!(blockLeft  && blockBottom)) checkCorner(-1, +1);
-		if (!(blockRight && blockBottom)) checkCorner(+1, +1);
-
-		pos.x = toX;
-		pos.y = toY;
+		return vec3.normalize( vec3.cross(strafe, dirVec) );
 	},
 
-	actionExists: function (time, keyFor, keyRev) {
+	/** @private */
+	rotateVertical: function (angle) {
+		angle *= this.speed.rotate;
+
+		var current = this.getAngleY();
+
+		if (angle > 0 && current >  (85).degree()) return;
+		if (angle < 0 && current < -(85).degree()) return;
+
+		var
+			axis = this.getStrafeVector(),
+			x = axis[0],
+			y = axis[1],
+			z = axis[2],
+			s = Math.sin(angle),
+			c = Math.cos(angle);
+
+		mat3.multiplyVec3([
+			c+(1-c)*x*x, (1-c)*x*y-s*z, (1-c)*x*z+s*y,
+			(1-c)*y*x+s*z, c+(1-c)*y*y, (1-c)*y*z-s*x,
+			(1-c)*z*x-s*y, (1-c)*z*y+s*x, c+(1-c)*z*z
+		], this.direction);
+	},
+
+	/** @private */
+	rotateHorisontal: function (angle) {
+		angle *= this.speed.rotate;
+
+		var sin = Math.sin(angle),
+			cos = Math.cos(angle),
+			mat = [ cos, 0, sin, 0, 1, 0, -sin, 0, cos ];
+
+		mat3.multiplyVec3(mat, this.direction);
+	},
+
+	debug: function () {
+		this.trace.value = {
+			pos: vec3.str([].slice.call(this.position).invoke('toFixed', 2)),
+			dir: vec3.str([].slice.call(this.direction).invoke('toFixed', 2)),
+			anX: this.getAngleX().getDegree().round(),
+			anY: this.getAngleY().getDegree().round()
+		};
+	},
+
+	getAngleX: function () {
+		var dir = this.direction;
+
+		return Math.atan2(dir[2], dir[0]) + (90).degree();
+	},
+
+	getAngleY: function () {
+		var
+			normal = vec3.create([0,1,0]),
+			dir    = this.direction,
+			length = vec3.length(normal) * vec3.length(dir),
+			angle  = Math.acos( vec3.dot(normal, dir) / length );
+
+		return angle - (90).degree();
+	},
+
+	checkAction: function (time, keyFor, keyRev, callback) {
 		var keyboard = atom.Keyboard();
 
-		if (keyboard.key(keyFor)) {
-			return time;
-		} else if (keyboard.key(keyRev)) {
-			return -time;
+		if (keyboard.key(keyRev)) {
+			time *= -1;
+		} else if (!keyboard.key(keyFor)) {
+			time = 0;
 		}
-		return 0;
+
+		if (time) callback.call(this, time);
+
+		return time;
 	},
 
-	checkAction: function (action, time, keyFor, keyRev) {
-		time = this.actionExists(time, keyFor, keyRev);
-
-		if (time) {
-			this[action](time);
-			return true;
-		}
-		return false;
+	pointer: function (x, y) {
+		if (x) this.rotateHorisontal( x.degree()*10 );
+		if (y) this.rotateVertical  ( y.degree()*10 );
 	},
 
-	pointer: function (delta) {
-		if (delta.y) {
-			this.vert(-delta.y*4);
-			this.redraw();
-		}
-		if (delta.x) {
-			this.rotate(delta.x*2);
-			this.redraw();
-		}
+	getMovementVector: function (time, strafe) {
+		var direction = strafe ? this.getStrafeVector() : vec3.create(this.direction);
+
+		return vec3.scale(direction, time/1000*this.speed.movement);
 	},
 
-	onUpdate: function (time) {
-		var update = false, moveTime, strafeTime;
-
-		update = this.checkAction('vert'  , time, 'aup'   , 'adown') || update;
-		update = this.checkAction('rotate', time, 'aright', 'aleft') || update;
-
-		moveTime   = this.actionExists(time, 'w', 's');
-		strafeTime = this.actionExists(time, 'd', 'a');
-
-		if (moveTime || strafeTime) update = true;
-		if (moveTime && strafeTime) {
-			moveTime   /= Math.SQRT2;
-			strafeTime /= Math.SQRT2;
-		}
-
-		if (  moveTime) this.move  (moveTime);
-		if (strafeTime) this.strafe(strafeTime);
-
-		if (update) {
-			this.updateShape();
-			this.redraw();
-		}
-	},
-
-	renderTo: function (ctx, resources) {
-		ctx.drawImage({
-			image : resources.get('images').get('player'),
-			center: this.shape.center,
-			angle : this.angle
+	onTick: function (time) {
+		this.checkAction(time, 'aright', 'aleft', function (time) {
+			this.rotateHorisontal( time.degree() );
 		});
+		this.checkAction(time, 'aup'   , 'adown', function (time) {
+			this.rotateVertical  (-time.degree() );
+		});
+		this.checkAction(time, 'w', 's', function (time) {
+			vec3.add(this.position, this.getMovementVector(time, false));
+		});
+		this.checkAction(time, 'd', 'a', function (time) {
+			vec3.add(this.position, this.getMovementVector(time, true ));
+		});
+
+		this.debug();
 	}
 
 });

@@ -326,7 +326,7 @@ vec3.lerp = function(vec, vec2, lerp, dest){
     dest[2] = vec[2] + lerp * (vec2[2] - vec[2]);
     
     return dest;
-}
+};
 
 /*
  * vec3.str
@@ -341,6 +341,7 @@ vec3.lerp = function(vec, vec2, lerp, dest){
 vec3.str = function(vec) {
 	return '[' + vec[0] + ', ' + vec[1] + ', ' + vec[2] + ']'; 
 };
+
 
 /*
  * mat3 - 3x3 Matrix
@@ -420,6 +421,31 @@ mat3.identity = function(dest) {
 	dest[6] = 0;
 	dest[7] = 0;
 	dest[8] = 1;
+	return dest;
+};
+
+
+/*
+ * mat3.multiplyVec3
+ * Transforms a vec3 with the given matrix
+ *
+ * Params:
+ * mat - mat3 to transform the vector with
+ * vec - vec3 to transform
+ * dest - Optional, vec3 receiving operation result. If not specified result is written to vec
+ *
+ * Returns:
+ * dest if specified, vec otherwise
+ */
+mat3.multiplyVec3 = function(mat, vec, dest) {
+	if(!dest) { dest = vec }
+
+	var x = vec[0], y = vec[1], z = vec[2];
+
+	dest[0] = mat[0]*x + mat[3]*y + mat[6]*z;
+	dest[1] = mat[1]*x + mat[4]*y + mat[7]*z;
+	dest[2] = mat[2]*x + mat[5]*y + mat[8]*z;
+
 	return dest;
 };
 

@@ -1,21 +1,19 @@
-LibCanvas.extract();
-
-/** @class Eye.Render */
-atom.declare('Eye.Render', {
+/** @class Render */
+atom.declare('Render', {
 
 	gl: null,
 	shaderProgram: null,
 
-	initialize: function (player, map, image) {
+	initialize: function (player, world, image) {
 		this.player = player;
-		this.map    = map;
+		this.world  = world;
 
 		this.moveMatrix = mat4.create();
 		this.persMatrix = mat4.create();
 
 		this.glInit();
 		this.shadersInit();
-		this.textureLoad(image);
+		this.texture = Utils.loadTexture(this.gl, image);
 		this.worldLoad();
 
 		this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -35,35 +33,12 @@ atom.declare('Eye.Render', {
 	},
 
 	worldLoad: function () {
-		var v = new Vertexes(), map = this.map;
+		var v = new Vertexes(), world = this.world, i;
 
-		map.eachCell(function (value, x, y) {
-			if (value == ' ') {
-				v.createCeil( new Point3D(x,0,y), new Point3D(x+1,0,y+1), new Point(2, y%3 ? 3 : 2) );
-				v.createCeil( new Point3D(x,1,y), new Point3D(x+1,1,y+1), new Point(3, x%3 ? 3 : 2) );
-			} else {
-				if (!map.isBlocked(x, y-1)) {
-					v.createWall( new Point3D(x,0,y)  , new Point3D(x+1,1,y)  ,new Point(0,4-value) );
-				}
+		for (i = 0; i < world.length; i++) {
+			v.createVoxel(world[i]);
+		}
 
-				if (!map.isBlocked(x, y+1)) {
-					v.createWall( new Point3D(x,0,y+1), new Point3D(x+1,1,y+1),new Point(0,4-value) );
-				}
-
-				if (!map.isBlocked(x-1, y)) {
-					v.createWall( new Point3D(x,0,y)  , new Point3D(x,1,y+1)  ,new Point(1,4-value) );
-				}
-
-				if (!map.isBlocked(x+1, y)) {
-					v.createWall( new Point3D(x+1,0,y), new Point3D(x+1,1,y+1),new Point(1,4-value) );
-				}
-			}
-		});
-
-
-		//v.create( new Point3D(-1,-1,-1), new Point3D( 1,-1, 1), new Point3D(2,3,0) );
-		//v.create( new Point3D(-1, 1,-1), new Point3D( 1, 1, 1), new Point3D(3,3,0) );
-		//v.create( new Point3D( 1, 1,-1), new Point3D(-1,-1,-1), new Point3D(0,0,0) );
 		this.prepareWorld(v);
 	},
 
@@ -81,20 +56,6 @@ atom.declare('Eye.Render', {
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexes.textures), gl.STATIC_DRAW);
 		this.textureBuffer.itemSize = 2;
 		this.textureBuffer.numItems = vertexes.count;
-	},
-
-	textureLoad: function (image) {
-		var gl = this.gl;
-
-		this.texture = this.gl.createTexture();
-		this.texture.image = image;
-
-		gl.pixelStorei  (gl.UNPACK_FLIP_Y_WEBGL, true);
-		gl.bindTexture  (gl.TEXTURE_2D, this.texture);
-		gl.texImage2D   (gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.texture.image);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-		gl.bindTexture  (gl.TEXTURE_2D, null);
 	},
 
 	shadersInit: function () {
@@ -127,7 +88,7 @@ atom.declare('Eye.Render', {
 		this.shaderProgram = shaderProgram;
 	},
 
-	draw: function () {
+	onTick: function () {
 		var gl = this.gl, mvMatrix = this.moveMatrix;
 
 		gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
@@ -141,9 +102,11 @@ atom.declare('Eye.Render', {
 
 		mat4.identity(mvMatrix);
 
-		mat4.rotate(mvMatrix, -this.player.vShift, [1, 0, 0]);
-		mat4.rotate(mvMatrix, this.player.angle + (90).degree(), [0, 1, 0]);
-		mat4.translate(mvMatrix, [-this.player.position.x, -this.player.height, -this.player.position.y]);
+		mat4.rotate(mvMatrix, this.player.getAngleY(), [1, 0, 0]);
+		mat4.rotate(mvMatrix, this.player.getAngleX(), [0, 1, 0]);
+		mat4.translate(mvMatrix, vec3.negate(vec3.create(this.player.position)) );
+
+		gl.enable(gl.CULL_FACE);
 
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, this.texture);
