@@ -14,7 +14,10 @@ atom.declare( 'Controller', {
 		var onTick = this.onTick.bind(this);
 
 		this.player = new Player();
-		this.render = new Render(this.player, Voxel.baseWorld(), images.get('textures'));
+
+		this.render = new Render();
+		this.render.setTexture(images.get('textures'));
+		this.render.loadWorld(Voxel.baseWorld());
 
 		setTimeout(function () {
 			atom.frame.add( onTick );
@@ -25,7 +28,8 @@ atom.declare( 'Controller', {
 
 	onTick: function (time) {
 		this.player.onTick(time);
-		this.render.onTick(time);
+		this.render.positionCamera(this.player);
+		this.render.redraw();
 	},
 
 	requestPointerLock: function (element) {

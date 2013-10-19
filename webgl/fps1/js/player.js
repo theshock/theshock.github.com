@@ -9,13 +9,33 @@ atom.declare( 'Player', {
 	initialize: function () {
 		this.trace = atom.trace();
 
-		this.position   = vec3.create([13, 13, 13]);
-		this.direction  = vec3.create([-0.5, -0.5, -0.5]);
+		this.position   = vec3.create([ 2, 3, 13]);
+		this.direction  = vec3.create([ 0.5, 0.5, -0.5]);
 
 		atom.Keyboard().events.add(
 			['aup', 'adown', 'aright', 'aleft', 'w', 's', 'd', 'a', 'space', 'shift'],
 			function (e) {e.preventDefault()}
 		);
+	},
+
+	get cameraVector () {
+		return vec3.negate(vec3.create(this.position));
+	},
+
+	get angleHorisontal () {
+		var dir = this.direction;
+
+		return Math.atan2(dir[2], dir[0]) + (90).degree();
+	},
+
+	get angleVertical () {
+		var
+			normal = vec3.create([0,1,0]),
+			dir    = this.direction,
+			length = vec3.length(normal) * vec3.length(dir),
+			angle  = Math.acos( vec3.dot(normal, dir) / length );
+
+		return angle - (90).degree();
 	},
 
 	getStrafeVector: function () {
@@ -31,7 +51,7 @@ atom.declare( 'Player', {
 	rotateVertical: function (angle) {
 		angle *= this.speed.rotate;
 
-		var current = this.getAngleY();
+		var current = this.angleVertical;
 
 		if (angle > 0 && current >  (85).degree()) return;
 		if (angle < 0 && current < -(85).degree()) return;
@@ -64,27 +84,11 @@ atom.declare( 'Player', {
 
 	debug: function () {
 		this.trace.value = {
-			pos: vec3.str([].slice.call(this.position).invoke('toFixed', 2)),
-			dir: vec3.str([].slice.call(this.direction).invoke('toFixed', 2)),
-			anX: this.getAngleX().getDegree().round(),
-			anY: this.getAngleY().getDegree().round()
+			'position ': vec3.str([].slice.call(this.position).invoke('toFixed', 2)),
+			'direction': vec3.str([].slice.call(this.direction).invoke('toFixed', 2)),
+			'horAngle ': this.angleHorisontal.getDegree().round(),
+			'verAngle ': this.angleVertical  .getDegree().round()
 		};
-	},
-
-	getAngleX: function () {
-		var dir = this.direction;
-
-		return Math.atan2(dir[2], dir[0]) + (90).degree();
-	},
-
-	getAngleY: function () {
-		var
-			normal = vec3.create([0,1,0]),
-			dir    = this.direction,
-			length = vec3.length(normal) * vec3.length(dir),
-			angle  = Math.acos( vec3.dot(normal, dir) / length );
-
-		return angle - (90).degree();
 	},
 
 	checkAction: function (time, keyFor, keyRev, callback) {

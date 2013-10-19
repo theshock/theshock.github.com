@@ -2,60 +2,50 @@
 atom.declare('Render', {
 
 	gl: null,
+	canvas: null,
 	shaderProgram: null,
 
-	initialize: function (player, world, image) {
-		this.player = player;
-		this.world  = world;
-
-		this.moveMatrix = mat4.create();
+	initialize: function () {
+		this.mvMatrix = mat4.create();
 		this.persMatrix = mat4.create();
 
 		this.glInit();
 		this.shadersInit();
-		this.texture = Utils.loadTexture(this.gl, image);
-		this.worldLoad();
+	},
 
-		this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
-		this.gl.enable(this.gl.DEPTH_TEST);
+	glInit: function () {
+		var gl, canvas;
+
+		canvas = atom.dom('canvas').first;
+
+		gl = Utils.getContext(canvas);
+		gl.viewportWidth  = canvas.width;
+		gl.viewportHeight = canvas.height;
+		gl.clearColor(0.0, 0.0, 0.0, 1.0);
+		gl.enable(gl.DEPTH_TEST);
+
+		this.gl     = gl;
+		this.canvas = canvas;
+	},
+
+	setTexture: function (image) {
+		this.texture = Utils.loadTexture(this.gl, image);
+	},
+
+	loadWorld: function (world) {
+		var bb = new BoxBuilder(), i;
+
+		for (i = 0; i < world.length; i++) {
+			bb.build(world[i]);
+		}
+
+		this.positionBuffer = bb.createBuffer(this.gl, true );
+		this.textureBuffer  = bb.createBuffer(this.gl, false);
 	},
 
 	setMatrixUniforms: function () {
 		this.gl.uniformMatrix4fv(this.shaderProgram.pMatrixUniform , false, this.persMatrix);
-		this.gl.uniformMatrix4fv(this.shaderProgram.mvMatrixUniform, false, this.moveMatrix);
-	},
-
-	glInit: function () {
-		this.canvas = atom.dom('canvas').first;
-		this.gl = Utils.getContext(this.canvas);
-		this.gl.viewportWidth = this.canvas.width;
-		this.gl.viewportHeight = this.canvas.height;
-	},
-
-	worldLoad: function () {
-		var v = new Vertexes(), world = this.world, i;
-
-		for (i = 0; i < world.length; i++) {
-			v.createVoxel(world[i]);
-		}
-
-		this.prepareWorld(v);
-	},
-
-	prepareWorld: function (vertexes) {
-		var gl = this.gl;
-
-		this.positionBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexes.positions), gl.STATIC_DRAW);
-		this.positionBuffer.itemSize = 3;
-		this.positionBuffer.numItems = vertexes.count;
-
-		this.textureBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.textureBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexes.textures), gl.STATIC_DRAW);
-		this.textureBuffer.itemSize = 2;
-		this.textureBuffer.numItems = vertexes.count;
+		this.gl.uniformMatrix4fv(this.shaderProgram.mvMatrixUniform, false, this.mvMatrix);
 	},
 
 	shadersInit: function () {
@@ -88,8 +78,15 @@ atom.declare('Render', {
 		this.shaderProgram = shaderProgram;
 	},
 
-	onTick: function () {
-		var gl = this.gl, mvMatrix = this.moveMatrix;
+	positionCamera: function (player) {
+		var mvMatrix = mat4.identity ( this.mvMatrix );
+		mat4.rotate   ( mvMatrix, player.angleVertical, [1, 0, 0]);
+		mat4.rotate   ( mvMatrix, player.angleHorisontal  , [0, 1, 0]);
+		mat4.translate( mvMatrix, player.cameraVector );
+	},
+
+	redraw: function () {
+		var gl = this.gl;
 
 		gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -99,12 +96,6 @@ atom.declare('Render', {
 		}
 
 		mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, this.persMatrix);
-
-		mat4.identity(mvMatrix);
-
-		mat4.rotate(mvMatrix, this.player.getAngleY(), [1, 0, 0]);
-		mat4.rotate(mvMatrix, this.player.getAngleX(), [0, 1, 0]);
-		mat4.translate(mvMatrix, vec3.negate(vec3.create(this.player.position)) );
 
 		gl.enable(gl.CULL_FACE);
 
