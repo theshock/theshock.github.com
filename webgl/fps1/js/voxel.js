@@ -9,6 +9,7 @@ atom.declare( 'Voxel', {
 		this.modelMatrix = mat4.create();
 
 		mat4.identity (this.modelMatrix);
+		mat4.translate(this.modelMatrix, this.position);
 
 		// split cells between each other
 		mat4.translate(this.modelMatrix, this.position);
@@ -19,26 +20,22 @@ atom.declare( 'Voxel', {
 	},
 
 	bindBuffers: function (gl, program) {
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.textureBuffer);
-		gl.vertexAttribPointer(program.attributes['textureCoord']  , this.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.builder.textureBuffer);
+		gl.vertexAttribPointer(program.attributes['textureCoord']  , 2, gl.FLOAT, false, 0, 0);
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
-		gl.vertexAttribPointer(program.attributes['vertexPosition'], this.positionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.builder.positionBuffer);
+		gl.vertexAttribPointer(program.attributes['vertexPosition'], 3, gl.FLOAT, false, 0, 0);
 
 		gl.uniformMatrix4fv(program.uniforms['modelMatrix'], false, this.modelMatrix);
 		gl.uniform1f       (program.uniforms['activeVoxel'], this.active ? 1.0 : 0.0);
 
-		gl.drawArrays(gl.TRIANGLES, 0, this.positionBuffer.numItems);
+		gl.drawArrays(gl.TRIANGLES, 0, this.builder.count);
 
 		return this;
 	},
 
-	buildBuffers: function (gl) {
-		var bb = new BoxBuilder().build(this);
-
-		this.positionBuffer = bb.createBuffer(gl, true );
-		this.textureBuffer  = bb.createBuffer(gl, false);
-
+	buildBuffers: function (container) {
+		this.builder = container.getBuilder(this.getMap());
 		return this;
 	},
 
@@ -49,12 +46,12 @@ atom.declare( 'Voxel', {
 });
 
 Voxel.mapping = {
-	glass: { floor: [3,3], wall : [3,3], ceil : [3,3] },
-	logo : { floor: [3,1], wall : [3,1], ceil : [3,1] },
-	rock : { floor: [3,2], wall : [3,2], ceil : [3,2] },
-	grass: { floor: [2,2], wall : [2,1], ceil : [2,3] },
-	tree : { floor: [1,2], wall : [1,1], ceil : [1,3] },
-	sand : { floor: [0,2], wall : [0,1], ceil : [0,3] }
+	glass: { floor: [3,3], wall : [3,3], ceil : [3,3], name: 'glass' },
+	logo : { floor: [3,1], wall : [3,1], ceil : [3,1], name: 'logo'  },
+	rock : { floor: [3,2], wall : [3,2], ceil : [3,2], name: 'rock'  },
+	grass: { floor: [2,2], wall : [2,1], ceil : [2,3], name: 'grass' },
+	tree : { floor: [1,2], wall : [1,1], ceil : [1,3], name: 'tree'  },
+	sand : { floor: [0,2], wall : [0,1], ceil : [0,3], name: 'sand'  }
 };
 
 Voxel.baseWorld = function () {

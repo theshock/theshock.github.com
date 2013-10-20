@@ -1,6 +1,29 @@
 
-/** @class BoxBuilder */
-atom.declare('BoxBuilder', {
+/** @class Box.Container */
+atom.declare('Box.Container', {
+
+	initialize: function (gl) {
+		this.gl    = gl;
+		this.builders = {};
+	},
+
+	getBuilder: function (map) {
+		if (this.builders[map.name]) {
+			return this.builders[map.name];
+		}
+
+		var builder = new Box.Builder();
+		builder.build(map);
+		builder.positionBuffer = builder.createBuffer(this.gl, true);
+		builder.textureBuffer  = builder.createBuffer(this.gl, false);
+		this.builders[map.name] = builder;
+		return builder;
+	}
+
+});
+
+/** @class Box.Builder */
+atom.declare('Box.Builder', {
 	textureMultiplier: 0.25,
 
 	initialize: function () {
@@ -9,21 +32,13 @@ atom.declare('BoxBuilder', {
 		this.count     = 0;
 	},
 
-	build: function (voxel) {
-		var position, map, x, y, z;
-
-		position = voxel.position;
-		map = voxel.getMap();
-		x = position[0];
-		y = position[1];
-		z = position[2];
-
-		this.createCeil    ( vec3.create([x,y+1,z]), vec3.create([x+1,y+1,z+1]), map.ceil  );
-		this.createFloor   ( vec3.create([x,y,z])  , vec3.create([x+1,y,z+1])  , map.floor );
-		this.createWall    ( vec3.create([x,y,z])  , vec3.create([x+1,y+1,z])  , map.wall  );
-		this.createWall    ( vec3.create([x+1,y,z]), vec3.create([x+1,y+1,z+1]), map.wall  );
-		this.createWallBack( vec3.create([x,y,z])  , vec3.create([x,y+1,z+1])  , map.wall  );
-		this.createWallBack( vec3.create([x,y,z+1]), vec3.create([x+1,y+1,z+1]), map.wall  );
+	build: function (map) {
+		this.createCeil    ( [0,1,0], [1,1,1], map.ceil  );
+		this.createFloor   ( [0,0,0], [1,0,1], map.floor );
+		this.createWall    ( [0,0,0], [1,1,0], map.wall  );
+		this.createWall    ( [1,0,0], [1,1,1], map.wall  );
+		this.createWallBack( [0,0,0], [0,1,1], map.wall  );
+		this.createWallBack( [0,0,1], [1,1,1], map.wall  );
 
 		return this;
 	},
@@ -33,7 +48,6 @@ atom.declare('BoxBuilder', {
 
 		data   = positions ? this.positions : this.textures;
 		buffer = gl.createBuffer();
-		buffer.numItems = this.count;
 		buffer.itemSize = positions ? 3 : 2;
 		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);

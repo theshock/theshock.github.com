@@ -12,6 +12,8 @@ atom.declare('Render', {
 
 		this.glInit();
 		this.shadersInit(onReady);
+
+		this.container = new Box.Container(this.gl);
 	},
 
 	glInit: function () {
@@ -34,7 +36,7 @@ atom.declare('Render', {
 	},
 
 	addItem: function (voxel) {
-		this.items.push( voxel.buildBuffers(this.gl) );
+		this.items.push( voxel.buildBuffers(this.container) );
 	},
 
 	createUniform: function (name) {
