@@ -1,25 +1,36 @@
 /** @class Voxel */
 atom.declare( 'Voxel', {
 
+	active: false,
+
 	initialize: function (material, position) {
 		this.material    = material;
 		this.position    = position;
 		this.modelMatrix = mat4.create();
 
 		mat4.identity (this.modelMatrix);
+
+		// split cells between each other
 		mat4.translate(this.modelMatrix, this.position);
 	},
 
-	bindBuffers: function (gl, shaderProgram) {
+	dump: function () {
+		return 'Voxel ' + vec3.str(this.position) + ' (' + this.material + ')';
+	},
+
+	bindBuffers: function (gl, program) {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.textureBuffer);
-		gl.vertexAttribPointer(shaderProgram.textureCoordAttribute  , this.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.vertexAttribPointer(program.attributes['textureCoord']  , this.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
-		gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, this.positionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.vertexAttribPointer(program.attributes['vertexPosition'], this.positionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-		gl.uniformMatrix4fv(shaderProgram.modelMatrixUniform, false, this.modelMatrix);
+		gl.uniformMatrix4fv(program.uniforms['modelMatrix'], false, this.modelMatrix);
+		gl.uniform1f       (program.uniforms['activeVoxel'], this.active ? 1.0 : 0.0);
 
 		gl.drawArrays(gl.TRIANGLES, 0, this.positionBuffer.numItems);
+
+		return this;
 	},
 
 	buildBuffers: function (gl) {
@@ -27,6 +38,8 @@ atom.declare( 'Voxel', {
 
 		this.positionBuffer = bb.createBuffer(gl, true );
 		this.textureBuffer  = bb.createBuffer(gl, false);
+
+		return this;
 	},
 
 	getMap: function () {
@@ -51,18 +64,18 @@ Voxel.baseWorld = function () {
 
 	materials.erase('rock');
 
-	for (x = 0; x <= 10; x++) {
-		for (z = 0; z <= 10; z++) {
+	for (x = 0; x <= 3; x++) {
+		for (z = 0; z <= 3; z++) {
 			result.push(
 				new Voxel('rock', vec3.create([x,-1,z]))
 			);
 		}
 	}
 
-	for (i = 150; i--;) {
+	for (i = 20; i--;) {
 		result.push(
 			new Voxel(materials.random, vec3.create([
-				Number.random(0, 10),Number.random(0, 10),Number.random(0, 10)
+				Number.random(0, 3),Number.random(0, 1),Number.random(0, 3)
 			]))
 		);
 	}

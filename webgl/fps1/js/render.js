@@ -3,10 +3,11 @@ atom.declare('Render', {
 
 	gl: null,
 	canvas: null,
-	shaderProgram: null,
+	program: null,
 
 	initialize: function (onReady) {
-		this.mvMatrix = mat4.create();
+		this.items = [];
+		this.modelViewMatrix = mat4.create();
 		this.persMatrix = mat4.create();
 
 		this.glInit();
@@ -32,44 +33,46 @@ atom.declare('Render', {
 		this.texture = Utils.loadTexture(this.gl, image);
 	},
 
-	loadWorld: function (world) {
-		this.world = world;
-
-		world.invoke('buildBuffers', this.gl);
+	addItem: function (voxel) {
+		this.items.push( voxel.buildBuffers(this.gl) );
 	},
 
-	setMatrixUniforms: function () {
-		this.gl.uniformMatrix4fv(this.shaderProgram.pMatrixUniform , false, this.persMatrix);
-		this.gl.uniformMatrix4fv(this.shaderProgram.mvMatrixUniform, false, this.mvMatrix);
+	createUniform: function (name) {
+		this.program.uniforms[name] = this.gl.getUniformLocation(this.program, name);
+	},
+
+	createAttribute: function (name) {
+		var gl = this.gl, program = this.program;
+		program.attributes[name] = gl.getAttribLocation(program, name);
+		gl.enableVertexAttribArray(program.attributes[name]);
 	},
 
 	shadersInit: function (onReady) {
 		var gl = this.gl;
 
 		Utils.loadShaders(gl, [ 'fragment', 'vertex' ], function (shaders) {
-			var shaderProgram = gl.createProgram();
-			gl.attachShader(shaderProgram, shaders.vertex  );
-			gl.attachShader(shaderProgram, shaders.fragment);
-			gl.linkProgram(shaderProgram);
+			var program = this.program = gl.createProgram();
+			gl.attachShader(program, shaders['vertex']  );
+			gl.attachShader(program, shaders['fragment']);
+			gl.linkProgram (program);
 
-			if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+			if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
 				throw new Error('Could not initialize shaders');
 			}
 
-			gl.useProgram(shaderProgram);
+			gl.useProgram(program);
 
-			shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, 'aVertexPosition');
-			gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+			program.uniforms   = {};
+			program.attributes = {};
 
-			shaderProgram.textureCoordAttribute = gl.getAttribLocation(shaderProgram, 'aTextureCoord');
-			gl.enableVertexAttribArray(shaderProgram.textureCoordAttribute);
+			this.createAttribute('textureCoord');
+			this.createAttribute('vertexPosition');
 
-			shaderProgram.modelMatrixUniform  = gl.getUniformLocation(shaderProgram, "uModelMatrix" );
-			shaderProgram.pMatrixUniform      = gl.getUniformLocation(shaderProgram, 'uPMatrix' );
-			shaderProgram.mvMatrixUniform     = gl.getUniformLocation(shaderProgram, 'uMVMatrix');
-			shaderProgram.samplerUniform      = gl.getUniformLocation(shaderProgram, 'uSampler' );
-
-			this.shaderProgram = shaderProgram;
+			this.createUniform('sampler');
+			this.createUniform('persMatrix');
+			this.createUniform('modelMatrix');
+			this.createUniform('activeVoxel');
+			this.createUniform('modelViewMatrix');
 
 			onReady.call(this);
 		}.bind(this));
@@ -77,29 +80,32 @@ atom.declare('Render', {
 	},
 
 	positionCamera: function (player) {
-		var mvMatrix = mat4.identity( this.mvMatrix );
-		mat4.rotate   ( mvMatrix, player.angleVertical, [1, 0, 0]);
-		mat4.rotate   ( mvMatrix, player.angleHorisontal  , [0, 1, 0]);
-		mat4.translate( mvMatrix, player.cameraVector );
+		var mv = mat4.identity( this.modelViewMatrix );
+		mat4.rotate   ( mv, player.angleVertical  , [1, 0, 0]);
+		mat4.rotate   ( mv, player.angleHorisontal, [0, 1, 0]);
+		mat4.translate( mv, player.cameraVector );
+
+		mat4.perspective(45, this.gl.viewportWidth / this.gl.viewportHeight, 0.1, 100.0, this.persMatrix);
 	},
 
 	redraw: function () {
-		var gl = this.gl;
+		var gl = this.gl, i, uniforms = this.program.uniforms;
 
 		gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+		gl.clear   (gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+		gl.enable  (gl.CULL_FACE);
 
-
-		mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, this.persMatrix);
-
-		gl.enable(gl.CULL_FACE);
 
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, this.texture);
-		gl.uniform1i(this.shaderProgram.samplerUniform, 0);
+		gl.uniform1i(uniforms['sampler'], 0);
 
-		this.setMatrixUniforms();
-		this.world.invoke('bindBuffers', gl, this.shaderProgram);
+		gl.uniformMatrix4fv(uniforms['persMatrix']     , false, this.persMatrix);
+		gl.uniformMatrix4fv(uniforms['modelViewMatrix'], false, this.modelViewMatrix);
+
+		for (i = 0; i < this.items.length; i++) {
+			this.items[i].bindBuffers(gl, this.program);
+		}
 	}
 
 });
