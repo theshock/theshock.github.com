@@ -18,6 +18,8 @@ atom.declare( 'Voxel', {
 		gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, this.positionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
 		gl.uniformMatrix4fv(shaderProgram.modelMatrixUniform, false, this.modelMatrix);
+
+		gl.drawArrays(gl.TRIANGLES, 0, this.positionBuffer.numItems);
 	},
 
 	buildBuffers: function (gl) {
