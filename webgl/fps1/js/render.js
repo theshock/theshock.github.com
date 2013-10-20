@@ -62,6 +62,11 @@ atom.declare('Render', {
 		canvas = atom.dom('canvas').first;
 
 		gl = Utils.getContext(canvas);
+
+		if (!gl) {
+			throw new Error('Fail getting WebGL context');
+		}
+
 		gl.viewportWidth  = canvas.width;
 		gl.viewportHeight = canvas.height;
 		gl.clearColor(0.0, 0.0, 0.0, 1.0);
