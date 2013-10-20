@@ -9,7 +9,7 @@ atom.declare( 'Player', {
 	initialize: function () {
 		this.trace = atom.trace();
 
-		this.position   = vec3.create([ 2, 3, 13]);
+		this.position   = vec3.create([ 2, 2, 2]);
 		this.direction  = vec3.create([ 0.5, 0.5, -0.5]);
 
 		atom.Keyboard().events.add(

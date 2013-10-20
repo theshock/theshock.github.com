@@ -33,14 +33,9 @@ atom.declare('Render', {
 	},
 
 	loadWorld: function (world) {
-		var bb = new BoxBuilder(), i;
+		this.world = world;
 
-		for (i = 0; i < world.length; i++) {
-			bb.build(world[i]);
-		}
-
-		this.positionBuffer = bb.createBuffer(this.gl, true );
-		this.textureBuffer  = bb.createBuffer(this.gl, false);
+		world.invoke('buildBuffers', this.gl);
 	},
 
 	setMatrixUniforms: function () {
@@ -58,20 +53,21 @@ atom.declare('Render', {
 			gl.linkProgram(shaderProgram);
 
 			if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-				throw new Error("Could not initialize shaders");
+				throw new Error('Could not initialize shaders');
 			}
 
 			gl.useProgram(shaderProgram);
 
-			shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+			shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, 'aVertexPosition');
 			gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
 
-			shaderProgram.textureCoordAttribute = gl.getAttribLocation(shaderProgram, "aTextureCoord");
+			shaderProgram.textureCoordAttribute = gl.getAttribLocation(shaderProgram, 'aTextureCoord');
 			gl.enableVertexAttribArray(shaderProgram.textureCoordAttribute);
 
-			shaderProgram.pMatrixUniform  = gl.getUniformLocation(shaderProgram, "uPMatrix" );
-			shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
-			shaderProgram.samplerUniform  = gl.getUniformLocation(shaderProgram, "uSampler" );
+			shaderProgram.modelMatrixUniform  = gl.getUniformLocation(shaderProgram, "uModelMatrix" );
+			shaderProgram.pMatrixUniform      = gl.getUniformLocation(shaderProgram, 'uPMatrix' );
+			shaderProgram.mvMatrixUniform     = gl.getUniformLocation(shaderProgram, 'uMVMatrix');
+			shaderProgram.samplerUniform      = gl.getUniformLocation(shaderProgram, 'uSampler' );
 
 			this.shaderProgram = shaderProgram;
 
@@ -81,7 +77,7 @@ atom.declare('Render', {
 	},
 
 	positionCamera: function (player) {
-		var mvMatrix = mat4.identity ( this.mvMatrix );
+		var mvMatrix = mat4.identity( this.mvMatrix );
 		mat4.rotate   ( mvMatrix, player.angleVertical, [1, 0, 0]);
 		mat4.rotate   ( mvMatrix, player.angleHorisontal  , [0, 1, 0]);
 		mat4.translate( mvMatrix, player.cameraVector );
@@ -105,13 +101,9 @@ atom.declare('Render', {
 		gl.bindTexture(gl.TEXTURE_2D, this.texture);
 		gl.uniform1i(this.shaderProgram.samplerUniform, 0);
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.textureBuffer);
-		gl.vertexAttribPointer(this.shaderProgram.textureCoordAttribute  , this.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
-		gl.vertexAttribPointer(this.shaderProgram.vertexPositionAttribute, this.positionBuffer.itemSize, gl.FLOAT, false, 0, 0)
-
 		this.setMatrixUniforms();
+		this.world.invoke('bindBuffers', gl, this.shaderProgram);
+
 		gl.drawArrays(gl.TRIANGLES, 0, this.positionBuffer.numItems);
 	}
 
