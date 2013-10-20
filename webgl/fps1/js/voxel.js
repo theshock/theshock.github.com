@@ -3,6 +3,11 @@ atom.declare( 'Voxel', {
 
 	active: false,
 
+	/**
+	 *
+	 * @param {String} material
+	 * @param {Number[]} position
+	 */
 	initialize: function (material, position) {
 		this.material    = material;
 		this.position    = position;
@@ -15,10 +20,12 @@ atom.declare( 'Voxel', {
 		mat4.translate(this.modelMatrix, this.position);
 	},
 
+	/** @return {String} */
 	dump: function () {
 		return 'Voxel ' + vec3.str(this.position) + ' (' + this.material + ')';
 	},
 
+	/** @return {Voxel} */
 	bindBuffers: function (gl, program) {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.builder.textureBuffer);
 		gl.vertexAttribPointer(program.attributes['textureCoord']  , 2, gl.FLOAT, false, 0, 0);
@@ -30,15 +37,16 @@ atom.declare( 'Voxel', {
 		gl.uniform1f       (program.uniforms['activeVoxel'], this.active ? 1.0 : 0.0);
 
 		gl.drawArrays(gl.TRIANGLES, 0, this.builder.count);
-
 		return this;
 	},
 
+	/** @return {Voxel} */
 	buildBuffers: function (container) {
 		this.builder = container.getBuilder(this.getMap());
 		return this;
 	},
 
+	/** @return {Object} */
 	getMap: function () {
 		return this.constructor.mapping[this.material];
 	}
@@ -54,6 +62,7 @@ Voxel.mapping = {
 	sand : { floor: [0,2], wall : [0,1], ceil : [0,3], name: 'sand'  }
 };
 
+/** @return {Voxel[]} */
 Voxel.baseWorld = function () {
 	var x, z, i,
 		result = [],

@@ -16,6 +16,46 @@ atom.declare('Render', {
 		this.container = new Box.Container(this.gl);
 	},
 
+	/** @param {Image} image */
+	setTexture: function (image) {
+		this.texture = Utils.loadTexture(this.gl, image);
+	},
+
+	/** @param {Voxel} voxel */
+	addItem: function (voxel) {
+		this.items.push( voxel.buildBuffers(this.container) );
+	},
+
+	/** @param {Player} player */
+	positionCamera: function (player) {
+		var mv = mat4.identity( this.modelViewMatrix );
+		mat4.rotate   ( mv, player.angleVertical  , [1, 0, 0]);
+		mat4.rotate   ( mv, player.angleHorisontal, [0, 1, 0]);
+		mat4.translate( mv, player.cameraVector );
+
+		mat4.perspective(45, this.gl.viewportWidth / this.gl.viewportHeight, 0.1, 100.0, this.persMatrix);
+	},
+
+	redraw: function () {
+		var gl = this.gl, i, uniforms = this.program.uniforms;
+
+		gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+		gl.clear   (gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+		gl.enable  (gl.CULL_FACE);
+
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, this.texture);
+		gl.uniform1i(uniforms['sampler'], 0);
+
+		gl.uniformMatrix4fv(uniforms['persMatrix']     , false, this.persMatrix);
+		gl.uniformMatrix4fv(uniforms['modelViewMatrix'], false, this.modelViewMatrix);
+
+		for (i = 0; i < this.items.length; i++) {
+			this.items[i].bindBuffers(gl, this.program);
+		}
+	},
+
+	/** @private */
 	glInit: function () {
 		var gl, canvas;
 
@@ -31,24 +71,31 @@ atom.declare('Render', {
 		this.canvas = canvas;
 	},
 
-	setTexture: function (image) {
-		this.texture = Utils.loadTexture(this.gl, image);
-	},
-
-	addItem: function (voxel) {
-		this.items.push( voxel.buildBuffers(this.container) );
-	},
-
+	/** @private */
 	createUniform: function (name) {
 		this.program.uniforms[name] = this.gl.getUniformLocation(this.program, name);
 	},
 
+	/** @private */
 	createAttribute: function (name) {
 		var gl = this.gl, program = this.program;
 		program.attributes[name] = gl.getAttribLocation(program, name);
 		gl.enableVertexAttribArray(program.attributes[name]);
 	},
 
+	/** @private */
+	createVariables: function () {
+		this.createAttribute('textureCoord');
+		this.createAttribute('vertexPosition');
+
+		this.createUniform('sampler');
+		this.createUniform('persMatrix');
+		this.createUniform('modelMatrix');
+		this.createUniform('activeVoxel');
+		this.createUniform('modelViewMatrix');
+	},
+
+	/** @private */
 	shadersInit: function (onReady) {
 		var gl = this.gl;
 
@@ -67,47 +114,11 @@ atom.declare('Render', {
 			program.uniforms   = {};
 			program.attributes = {};
 
-			this.createAttribute('textureCoord');
-			this.createAttribute('vertexPosition');
-
-			this.createUniform('sampler');
-			this.createUniform('persMatrix');
-			this.createUniform('modelMatrix');
-			this.createUniform('activeVoxel');
-			this.createUniform('modelViewMatrix');
+			this.createVariables();
 
 			onReady.call(this);
 		}.bind(this));
 
-	},
-
-	positionCamera: function (player) {
-		var mv = mat4.identity( this.modelViewMatrix );
-		mat4.rotate   ( mv, player.angleVertical  , [1, 0, 0]);
-		mat4.rotate   ( mv, player.angleHorisontal, [0, 1, 0]);
-		mat4.translate( mv, player.cameraVector );
-
-		mat4.perspective(45, this.gl.viewportWidth / this.gl.viewportHeight, 0.1, 100.0, this.persMatrix);
-	},
-
-	redraw: function () {
-		var gl = this.gl, i, uniforms = this.program.uniforms;
-
-		gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-		gl.clear   (gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-		gl.enable  (gl.CULL_FACE);
-
-
-		gl.activeTexture(gl.TEXTURE0);
-		gl.bindTexture(gl.TEXTURE_2D, this.texture);
-		gl.uniform1i(uniforms['sampler'], 0);
-
-		gl.uniformMatrix4fv(uniforms['persMatrix']     , false, this.persMatrix);
-		gl.uniformMatrix4fv(uniforms['modelViewMatrix'], false, this.modelViewMatrix);
-
-		for (i = 0; i < this.items.length; i++) {
-			this.items[i].bindBuffers(gl, this.program);
-		}
 	}
 
 });

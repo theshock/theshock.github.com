@@ -82,6 +82,7 @@ atom.declare( 'Player', {
 		mat3.multiplyVec3(mat, this.direction);
 	},
 
+	/** @private */
 	debug: function () {
 		this.trace.value = {
 			'position ': vec3.str([].slice.call(this.position ).invoke('toFixed', 2)),
@@ -91,6 +92,7 @@ atom.declare( 'Player', {
 		};
 	},
 
+	/** @private */
 	checkAction: function (time, keyFor, keyRev, callback) {
 		var keyboard = atom.Keyboard();
 

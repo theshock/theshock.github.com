@@ -3,35 +3,44 @@
 atom.declare('Box.Container', {
 
 	initialize: function (gl) {
-		this.gl    = gl;
+		/** @private */
+		this.gl = gl;
+		/** @private */
 		this.builders = {};
 	},
 
+	/** @return {Box.Builder} */
 	getBuilder: function (map) {
-		if (this.builders[map.name]) {
-			return this.builders[map.name];
+		var buildersCache = this.builders, builder;
+
+		if (buildersCache[map.name]) {
+			return buildersCache[map.name];
 		}
 
-		var builder = new Box.Builder();
+		builder = new Box.Builder();
 		builder.build(map);
-		builder.positionBuffer = builder.createBuffer(this.gl, true);
-		builder.textureBuffer  = builder.createBuffer(this.gl, false);
-		this.builders[map.name] = builder;
-		return builder;
+		builder.createBuffers(this.gl);
+		return buildersCache[map.name] = builder;
 	}
 
 });
 
 /** @class Box.Builder */
 atom.declare('Box.Builder', {
+
+	count: 0,
+
+	/** @private */
 	textureMultiplier: 0.25,
 
 	initialize: function () {
+		/** @private */
 		this.positions = [];
+		/** @private */
 		this.textures  = [];
-		this.count     = 0;
 	},
 
+	/** @return {Box.Builder} */
 	build: function (map) {
 		this.createCeil    ( [0,1,0], [1,1,1], map.ceil  );
 		this.createFloor   ( [0,0,0], [1,0,1], map.floor );
@@ -43,6 +52,14 @@ atom.declare('Box.Builder', {
 		return this;
 	},
 
+	/** @return {Box.Builder} */
+	createBuffers: function (gl) {
+		this.positionBuffer = this.createBuffer(gl, true);
+		this.textureBuffer  = this.createBuffer(gl, false);
+		return this;
+	},
+
+	/** @return {WebGLBuffer} */
 	createBuffer: function (gl, positions) {
 		var data, buffer;
 
