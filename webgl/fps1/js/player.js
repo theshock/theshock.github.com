@@ -84,7 +84,7 @@ atom.declare( 'Player', {
 
 	debug: function () {
 		this.trace.value = {
-			'position ': vec3.str([].slice.call(this.position).invoke('toFixed', 2)),
+			'position ': vec3.str([].slice.call(this.position ).invoke('toFixed', 2)),
 			'direction': vec3.str([].slice.call(this.direction).invoke('toFixed', 2)),
 			'horAngle ': this.angleHorisontal.getDegree().round(),
 			'verAngle ': this.angleVertical  .getDegree().round()

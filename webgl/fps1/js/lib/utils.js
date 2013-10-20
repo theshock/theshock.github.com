@@ -12,36 +12,54 @@ window.Utils = {
 		return null;
 	},
 
-	getShader: function (gl, id) {
-		var shaderScript = document.getElementById(id);
-		if (!shaderScript) {
-			return null;
-		}
+	loadShaders: function (gl, names, callback) {
+		var results = {},
+			pathPrefix = location.origin + atom.uri().directory + 'shaders/';
 
-		var str = "";
-		var k = shaderScript.firstChild;
-		while (k) {
-			if (k.nodeType == 3) {
-				str += k.textContent;
+		function checkReady () {
+			for (var i = names.length; i--;) {
+				if (!results[names[i]]) {
+					return;
+				}
 			}
-			k = k.nextSibling;
+
+			callback(results);
 		}
 
-		var shader;
-		if (shaderScript.type == "x-shader/x-fragment") {
-			shader = gl.createShader(gl.FRAGMENT_SHADER);
-		} else if (shaderScript.type == "x-shader/x-vertex") {
-			shader = gl.createShader(gl.VERTEX_SHADER);
-		} else {
-			return null;
+		names.forEach(function (name) {
+			var path = pathPrefix + name + '.c';
+
+			console.log( 'Require shader from [ ' + path + ' ] name: ' + name + '' );
+
+			atom.ajax({
+				url: path,
+				method: 'GET',
+				onLoad: function (code) {
+					results[name] = Utils.prepareShader(gl, code, name);
+					checkReady();
+				}});
+		});
+	},
+
+	prepareShader: function (gl, code, name) {
+		var
+			lines  = code.split('\n'),
+			header = lines.shift(),
+			match  = header.match('type:([A-Z_]+)');
+
+		if (!match || !gl[match[1]]) {
+			throw new Error('Unknown shader type: ' + header);
 		}
 
-		gl.shaderSource(shader, str);
+		var shader = gl.createShader(gl[match[1]]);
+
+		code = lines.join('\n');
+		gl.shaderSource(shader, code);
 		gl.compileShader(shader);
 
 		if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
 			console.error(gl.getShaderInfoLog(shader));
-			return null;
+			throw new TypeError('Cannot compile shader ' + name + ' (' + match[0] + ')');
 		}
 
 		return shader;
@@ -56,8 +74,8 @@ window.Utils = {
 		gl.texImage2D   (gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-		gl.enable(gl.BLEND);
+		gl.blendFunc    (gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		gl.enable       (gl.BLEND);
 		gl.bindTexture  (gl.TEXTURE_2D, null);
 
 		return texture;

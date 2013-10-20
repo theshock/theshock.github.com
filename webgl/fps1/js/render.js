@@ -5,12 +5,12 @@ atom.declare('Render', {
 	canvas: null,
 	shaderProgram: null,
 
-	initialize: function () {
+	initialize: function (onReady) {
 		this.mvMatrix = mat4.create();
 		this.persMatrix = mat4.create();
 
 		this.glInit();
-		this.shadersInit();
+		this.shadersInit(onReady);
 	},
 
 	glInit: function () {
@@ -48,34 +48,36 @@ atom.declare('Render', {
 		this.gl.uniformMatrix4fv(this.shaderProgram.mvMatrixUniform, false, this.mvMatrix);
 	},
 
-	shadersInit: function () {
-		var gl = this.gl, shader;
+	shadersInit: function (onReady) {
+		var gl = this.gl;
 
-		var fragmentShader = Utils.getShader(gl, "shader-fs");
-		var vertexShader   = Utils.getShader(gl, "shader-vs");
+		Utils.loadShaders(gl, [ 'fragment', 'vertex' ], function (shaders) {
+			var shaderProgram = gl.createProgram();
+			gl.attachShader(shaderProgram, shaders.vertex  );
+			gl.attachShader(shaderProgram, shaders.fragment);
+			gl.linkProgram(shaderProgram);
 
-		var shaderProgram = gl.createProgram();
-		gl.attachShader(shaderProgram, vertexShader);
-		gl.attachShader(shaderProgram, fragmentShader);
-		gl.linkProgram(shaderProgram);
+			if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+				throw new Error("Could not initialize shaders");
+			}
 
-		if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-			throw new Error("Could not initialise shaders");
-		}
+			gl.useProgram(shaderProgram);
 
-		gl.useProgram(shaderProgram);
+			shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+			gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
 
-		shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
-		gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+			shaderProgram.textureCoordAttribute = gl.getAttribLocation(shaderProgram, "aTextureCoord");
+			gl.enableVertexAttribArray(shaderProgram.textureCoordAttribute);
 
-		shaderProgram.textureCoordAttribute = gl.getAttribLocation(shaderProgram, "aTextureCoord");
-		gl.enableVertexAttribArray(shaderProgram.textureCoordAttribute);
+			shaderProgram.pMatrixUniform  = gl.getUniformLocation(shaderProgram, "uPMatrix" );
+			shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+			shaderProgram.samplerUniform  = gl.getUniformLocation(shaderProgram, "uSampler" );
 
-		shaderProgram.pMatrixUniform  = gl.getUniformLocation(shaderProgram, "uPMatrix" );
-		shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
-		shaderProgram.samplerUniform  = gl.getUniformLocation(shaderProgram, "uSampler" );
+			this.shaderProgram = shaderProgram;
 
-		this.shaderProgram = shaderProgram;
+			onReady.call(this);
+		}.bind(this));
+
 	},
 
 	positionCamera: function (player) {
@@ -107,7 +109,7 @@ atom.declare('Render', {
 		gl.vertexAttribPointer(this.shaderProgram.textureCoordAttribute  , this.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
-		gl.vertexAttribPointer(this.shaderProgram.vertexPositionAttribute, this.positionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.vertexAttribPointer(this.shaderProgram.vertexPositionAttribute, this.positionBuffer.itemSize, gl.FLOAT, false, 0, 0)
 
 		this.setMatrixUniforms();
 		gl.drawArrays(gl.TRIANGLES, 0, this.positionBuffer.numItems);

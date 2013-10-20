@@ -15,15 +15,13 @@ atom.declare( 'Controller', {
 
 		this.player = new Player();
 
-		this.render = new Render();
+		this.render = new Render(function () {
+			atom.frame.add( onTick );
+		});
 		this.render.setTexture(images.get('textures'));
 		this.render.loadWorld(Voxel.baseWorld());
 
-		setTimeout(function () {
-			atom.frame.add( onTick );
-		}, 100);
-
-		this.requestPointerLock(atom.dom('canvas').first);
+		this.requestPointerLock(this.render.canvas);
 	},
 
 	onTick: function (time) {
@@ -47,6 +45,4 @@ atom.declare( 'Controller', {
 });
 
 
-atom.dom(function () {
-	new Controller();
-});
+atom.dom(Controller);
