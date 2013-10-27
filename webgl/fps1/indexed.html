@@ -1,6 +1,8 @@
 <!doctype html>
 <html>
 <head>
+<script src="js/lib/atom.js"></script>
+<script src="js/lib/glMatrix.js"></script>
 <script type="text/javascript">
 var gl = null; // our WebGL rendering context
 var viewportWidth;
@@ -78,9 +80,9 @@ function init() {
 	var vertices = [
 		// position XYZ, normal XYZ, texcoord UV => 8 floats per vertex
 		-0.5,  0.5,  0.0,  0.6,  0.0,  0.8,  0.0,  0.0,
-		0.5,  0.5,  0.0,  0.6,  0.0,  0.8,  1.0,  0.0,
+		 0.5,  0.5,  0.0,  0.6,  0.0,  0.8,  1.0,  0.0,
 		-0.5, -0.5,  0.0,  0.0,  0.0,  1.0,  0.0,  1.0,
-		0.5, -0.5,  0.0,  0.0,  0.6,  0.8,  1.0,  1.0,
+		 0.5, -0.5,  0.0,  0.0,  0.6,  0.8,  1.0,  1.0,
 	];
 	// we need also some indices because of this annoying Firefox-Bug:
 	// https://bugzilla.mozilla.org/show_bug.cgi?id=521667
@@ -176,8 +178,19 @@ function draw() {
 	gl.viewport(0, 0, viewportWidth, viewportHeight);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
 
+
 	// setup shader
 	gl.useProgram(program);
+
+	var mv = mat4.identity( mat4.create() );
+	mat4.rotate ( mv, (14).degree(), [1, 0, 0]);
+	mat4.rotate ( mv, (11).degree(), [0, 1, 0]);
+
+	var pers = mat4.identity( mat4.create() );
+	mat4.perspective(45, viewportWidth / viewportHeight, 0.1, 100.0, pers);
+
+	gl.uniformMatrix4fv(gl.getUniformLocation(program, 'modelViewMatrix'), false, mv);
+	gl.uniformMatrix4fv(gl.getUniformLocation(program, 'persMatrix'), false, pers);
 
 	// setup interleaved VBO and IBO
 	gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
@@ -200,15 +213,17 @@ function draw() {
 
 <script id="shader-vs" type="x-shader/x-vertex">
 	precision highp float;
+	uniform mat4 modelViewMatrix;
+	uniform mat4 persMatrix;
 	attribute vec3 aPosition;
 	attribute vec3 aNormal;
 	attribute vec2 aTexCoord;
 	varying vec3 vNormal;
 	varying vec2 vTexCoord;
 	void main() {
-	gl_Position = vec4(aPosition, 1.0);
-	vTexCoord = aTexCoord;
-	vNormal = aNormal;
+		gl_Position = persMatrix * modelViewMatrix * vec4(aPosition, 1.0);
+		vTexCoord = aTexCoord;
+		vNormal = aNormal;
 	}
 </script>
 
@@ -218,7 +233,7 @@ function draw() {
 	varying vec2 vTexCoord;
 	uniform sampler2D uTexture;
 	void main() {
-	gl_FragColor = texture2D(uTexture, vTexCoord);
+		gl_FragColor = texture2D(uTexture, vTexCoord);
 	}
 </script>
 </head>
