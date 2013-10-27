@@ -183,6 +183,26 @@ function loadTexture(filename) {
 	return texture;
 }
 
+var angleX = 25;
+var angleY = 30;
+var x = -1;
+var y = 1;
+var z = 2.4;
+
+document.onkeydown = function (e) {
+	console.log(e.keyCode);
+	if (e.keyCode == 37) angleY -= 3;
+	if (e.keyCode == 39) angleY += 3;
+	if (e.keyCode == 38) angleX -= 3;
+	if (e.keyCode == 40) angleX += 3;
+	if (e.keyCode == 65) x -= 0.3;
+	if (e.keyCode == 68) x += 0.3;
+	if (e.keyCode == 87) z -= 0.3;
+	if (e.keyCode == 83) z += 0.3;
+	if (e.keyCode == 81) y -= 0.3;
+	if (e.keyCode == 69) y += 0.3;
+}
+
 function draw() {
 	gl.viewport(0, 0, viewportWidth, viewportHeight);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
@@ -192,9 +212,9 @@ function draw() {
 	gl.useProgram(program);
 
 	var mv = mat4.identity( mat4.create() );
-	mat4.rotate ( mv, (25).degree(), [1, 0, 0]);
-	mat4.rotate ( mv, (30).degree(), [0, 1, 0]);
-	mat4.translate( mv, vec3.negate(vec3.create([ -1, 1, 2.4 ])) );
+	mat4.rotate ( mv, angleX.degree(), [1, 0, 0]);
+	mat4.rotate ( mv, angleY.degree(), [0, 1, 0]);
+	mat4.translate( mv, vec3.negate(vec3.create([ x, y, z ])) );
 
 	var pers = mat4.identity( mat4.create() );
 	mat4.perspective(45, viewportWidth / viewportHeight, 0.1, 100.0, pers);
