@@ -19,7 +19,8 @@ atom.declare('Render', {
 	},
 
 	debugCreate: function () {
-		var indices = [
+		var gl = this.gl,
+			indices = [
 				0, 1, 2, 0, 2, 3,
 				8, 6, 9, 6, 7, 9,
 				8, 9, 3, 8, 3, 2,
@@ -27,7 +28,6 @@ atom.declare('Render', {
 				0, 7, 6, 0, 6, 1,
 				2, 1, 6, 2, 6, 8
 			],
-			gl = this.gl,
 			vertices = [
 				// position XYZ, normal XYZ, texcoord3UV => 8 floats per vertex
 				0,0,1,  0,0,0,  0,0,

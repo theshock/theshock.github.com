@@ -97,7 +97,7 @@ function init() {
 
 	// create texture
 	// =================================================
-	texture = loadTexture("http://wiki.delphigl.com/wiki.png");
+	texture = loadTexture("wiki.png");
 
 	// draw scene every 33 milliseconds
 	setInterval(draw, 33);
@@ -157,7 +157,7 @@ function loadTexture(filename) {
 	// register event handlers
 	image.onload = function() {
 		gl.bindTexture(gl.TEXTURE_2D, texture);
-		gl.texImage2D(gl.TEXTURE_2D, 0, image);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 		gl.generateMipmap(gl.TEXTURE_2D);
 		draw(); // texture now available, we can redraw the scene
 	}
@@ -199,6 +199,7 @@ function draw() {
 </script>
 
 <script id="shader-vs" type="x-shader/x-vertex">
+	precision highp float;
 	attribute vec3 aPosition;
 	attribute vec3 aNormal;
 	attribute vec2 aTexCoord;
@@ -212,6 +213,7 @@ function draw() {
 </script>
 
 <script id="shader-fs" type="x-shader/x-fragment">
+	precision highp float;
 	varying vec3 vNormal;
 	varying vec2 vTexCoord;
 	uniform sampler2D uTexture;
