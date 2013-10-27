@@ -9,8 +9,8 @@ atom.declare( 'Player', {
 	initialize: function () {
 		this.trace = atom.trace();
 
-		this.position   = vec3.create([ -3, 8, -3]);
-		this.direction  = vec3.normalize(vec3.create([ 0.5, -0.7, 0.5]));
+		this.position   = vec3.create([ -1, -0.25, -1]);
+		this.direction  = vec3.normalize(vec3.create([ 0.7, 0.25, 0.7]));
 
 		atom.Keyboard().events.add(
 			['aup', 'adown', 'aright', 'aleft', 'w', 's', 'd', 'a', 'space', 'shift'],

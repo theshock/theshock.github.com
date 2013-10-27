@@ -14,6 +14,43 @@ atom.declare('Render', {
 		this.shadersInit(onReady);
 
 		this.container = new Box.Container(this.gl);
+
+		this.debugCreate();
+	},
+
+	debugCreate: function () {
+		var indices = [
+				0, 1, 2, 0, 2, 3,
+				8, 6, 9, 6, 7, 9,
+				8, 9, 3, 8, 3, 2,
+				0, 3, 9, 0, 9, 7,
+				0, 7, 6, 0, 6, 1,
+				2, 1, 6, 2, 6, 8
+			],
+			gl = this.gl,
+			vertices = [
+				// position XYZ, normal XYZ, texcoord3UV => 8 floats per vertex
+				0,0,1,  0,0,0,  0,0,
+				1,0,1,  0,0,0,  0,0,
+				0,0,0,  0,0,0,  0,0,
+				1,0,0,  0,0,0,  0,0,
+
+				0,1,1,  0,0,0,  0,0,
+				1,1,1,  0,0,0,  0,0,
+				0,1,0,  0,0,0,  0,0,
+				1,1,0,  0,0,0,  0,0
+			];
+
+		// create VBO and IBO
+		this.vbo = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+		this.ibo = gl.createBuffer();
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+
+		this.length = indices.length;
+
 	},
 
 	/** @param {Image} image */
@@ -49,6 +86,12 @@ atom.declare('Render', {
 
 		gl.uniformMatrix4fv(uniforms['persMatrix']     , false, this.persMatrix);
 		gl.uniformMatrix4fv(uniforms['modelViewMatrix'], false, this.modelViewMatrix);
+
+		gl.uniformMatrix4fv(uniforms['modelMatrix'], false, mat4.identity(mat4.create()));
+		gl.uniform1f       (uniforms['activeVoxel'], 0.0);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
+		gl.drawElements(gl.TRIANGLES, this.length, gl.UNSIGNED_SHORT, 0);
 
 		for (i = 0; i < this.items.length; i++) {
 			this.items[i].bindBuffers(gl, this.program);

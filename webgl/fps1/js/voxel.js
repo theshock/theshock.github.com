@@ -17,7 +17,7 @@ atom.declare( 'Voxel', {
 		mat4.translate(this.modelMatrix, this.position);
 
 		// split cells between each other
-		mat4.translate(this.modelMatrix, this.position);
+		// mat4.translate(this.modelMatrix, this.position);
 	},
 
 	/** @return {String} */
@@ -87,4 +87,17 @@ Voxel.baseWorld = function () {
 	}
 
 	return result;
+};
+
+Voxel.tinyWorld = function () {
+	return [
+		new Voxel('rock', vec3.create([-2,-2,-2])),
+		new Voxel('rock', vec3.create([ 2,-2,-2])),
+		new Voxel('logo', vec3.create([-2,-2, 2])),
+		new Voxel('rock', vec3.create([ 2,-2, 2])),
+		new Voxel('tree', vec3.create([-2, 2,-2])),
+		new Voxel('tree', vec3.create([ 2, 2,-2])),
+		new Voxel('tree', vec3.create([-2, 2, 2])),
+		new Voxel('sand', vec3.create([ 2, 2, 2]))
+	];
 };
