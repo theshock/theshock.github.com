@@ -7,250 +7,166 @@
 <script src="js/player.js"></script>
 
 <script>
-var gl = null; // our WebGL rendering context
-var viewportWidth;
-var viewportHeight;
+(function () {
+	var
+		gl,
+		viewportWidth,
+		viewportHeight,
+		player,
+		length,
+		program,
+		vbo,
+		ibo,
+		texture;
 
-var player;
-var program; // shader program object
-var vbo;     // vertexbufferobject
-var ibo;     // indexbufferobject
-var texture; // texture object
-
-window.onload = function () {
-	player = new Player();
-
-	var canvas = document.getElementById("canvas");
-	viewportWidth = canvas.width;
-	viewportHeight = canvas.height;
-
-	var names = [ "webgl", "experimental-webgl", "moz-webgl", "webkit-3d" ];
-	for (var i=0; names.length>i; i++) {
-		try {
-			gl = canvas.getContext(names[i]);
-			if (gl) { break; }
-		} catch (e) { }
-	}
-	if (!gl) {
-		alert("No known OpenGL context detected! Is it enabled?");
-		return;
-	}
-	// since WebGL is still experimental, we need some compatibility code
-	compatibilityCode();
-
-	// basic settings
-	// =================================================
-	gl.clearColor(0, 0, 0, 1);
-	gl.enable(gl.DEPTH_TEST);
-
-	// setup shaders
-	// =================================================
-	var vertexShaderSource = getShaderSource("shader-vs");
-	var fragmentShaderSource = getShaderSource("shader-fs");
-
-	var vertexShader = loadShader(gl.VERTEX_SHADER, vertexShaderSource);
-	var fragmentShader = loadShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
-	if (!vertexShader || !fragmentShader) {
-		return;
+	function onMove (e) {
+		player.pointer(e.movementX, e.movementY);
 	}
 
-	// create program object
-	program = gl.createProgram();
+	window.onload = function () {
+		player = new Player();
 
-	// attach our two shaders to the program
-	gl.attachShader(program, vertexShader);
-	gl.attachShader(program, fragmentShader);
+		var canvas = document.getElementById("canvas");
+		viewportWidth = canvas.width;
+		viewportHeight = canvas.height;
+		gl = Utils.getContext(canvas);
+		gl.clearColor(0, 0, 0, 1);
+		gl.enable(gl.DEPTH_TEST);
 
-	// setup attributes (optional)
-	gl.bindAttribLocation(program, 0, "aPosition");
-	gl.bindAttribLocation(program, 1, "aNormal");
-	gl.bindAttribLocation(program, 2, "aTexCoord");
+		atom.dom(canvas).bind('click', function () {
+			atom.pointerLock.request(canvas, onMove);
+		});
 
-	// linking
-	gl.linkProgram(program);
-	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-		alert(gl.getProgramInfoLog(program));
-		return;
-	}
 
-	// setup uniforms (optional)
-	gl.useProgram(program);
-	gl.uniform1i(gl.getUniformLocation(program, "uTexture"), 0);
+		Utils.loadShaders(gl, [ 'fragment-indexes', 'vertex-indexes' ], function (shaders) {
+			// create program object
+			program = gl.createProgram();
 
-	// setup VBO
-	// =================================================
+			// attach our two shaders to the program
+			gl.attachShader(program, shaders['vertex-indexes']);
+			gl.attachShader(program, shaders['fragment-indexes']);
 
-	// define some vertexdata
-	var vertices = [
-		// position XYZ, normal XYZ, texcoord UV => 8 floats per vertex
-		-0.5,  0.5,  0.0,  0.6,  0.0,  0.8,  0.0,  0.0,
-		 0.5,  0.5,  0.0,  0.6,  0.0,  0.8,  1.0,  0.0,
-		-0.5, -0.5,  0.0,  0.0,  0.0,  1.0,  0.0,  1.0,
-		 0.5, -0.5,  0.0,  0.0,  0.6,  0.8,  1.0,  1.0,
-		-0.5,  0.5,  1.0,  0.6,  0.0,  0.8,  1.0,  0.0,
-		 0.5,  0.5,  1.0,  0.6,  0.0,  0.8,  0.0,  0.0,
-		-0.5, -0.5,  1.0,  0.0,  0.0,  1.0,  1.0,  1.0,
-		 0.5, -0.5,  1.0,  0.0,  0.6,  0.8,  0.0,  1.0,
-	];
-	// we need also some indices because of this annoying Firefox-Bug:
-	// https://bugzilla.mozilla.org/show_bug.cgi?id=521667
-	var indices = [
-		0,3,2, 0,1,3,
-		1,5,3, 3,5,7,
-		6,7,4, 7,5,4,
-		2,3,6, 6,3,7,
-		0,2,6, 0,6,4,
-		0,4,1, 1,4,5
+			// setup attributes (optional)
+			gl.bindAttribLocation(program, 0, "aPosition");
+			gl.bindAttribLocation(program, 1, "aNormal");
+			gl.bindAttribLocation(program, 2, "aTexCoord");
 
-	];
-	// create VBO and IBO
-	vbo = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-	ibo = gl.createBuffer();
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+			// linking
+			gl.linkProgram(program);
+			if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+				console.error(gl.getProgramInfoLog(program));
+				return;
+			}
 
-	this.length = indices.length;
-	// create texture
-	// =================================================
-	texture = loadTexture("wiki.png");
+			// setup uniforms (optional)
+			gl.useProgram(program);
+			gl.uniform1i(gl.getUniformLocation(program, "uTexture"), 0);
 
-	atom.frame.add(draw);
-}
+			// setup VBO
+			// =================================================
 
-function compatibilityCode() {
-	// Google Chrome compatibility code
-	// Since a JavaScript function may have multiple return types, functions
-	// 'getProgrami' and 'getShaderi' where renamed. However, Chrome does still
-	// use the old names.  (30 Nov 2009)
-	if (!gl.getProgramParameter) {
-		gl.getProgramParameter = gl.getProgrami;
-	}
-	if (!gl.getShaderParameter) {
-		gl.getShaderParameter = gl.getShaderi;
-	}
-}
+			// define some vertexdata
+			var vertices = [
+				// position XYZ, normal XYZ, texcoord UV => 8 floats per vertex
+				0, 1,    0.0,  0.6,  0.0,  0.8,   0, 0,
+				1, 1,    0.0,  0.6,  0.0,  0.8,   1, 0,
+				0, 0,    0.0,  0.0,  0.0,  1.0,   0, 1,
+				1, 0,    0.0,  0.0,  0.6,  0.8,   1, 1,
+				0, 1,    1.0,  0.6,  0.0,  0.8,   1, 0,
+				1, 1,    1.0,  0.6,  0.0,  0.8,   0, 0,
+				0, 0,    1.0,  0.0,  0.0,  1.0,   1, 1,
+				1, 0,    1.0,  0.0,  0.6,  0.8,   0, 1
+			];
+			// we need also some indices because of this annoying Firefox-Bug:
+			// https://bugzilla.mozilla.org/show_bug.cgi?id=521667
+			var indices = [
+				0,3,2, 0,1,3,
+				1,5,3, 3,5,7,
+				6,7,4, 7,5,4,
+				2,3,6, 6,3,7,
+				0,2,6, 0,6,4,
+				0,4,1, 1,4,5
 
-function getShaderSource(id) {
-	var script = document.getElementById(id);
-	if (!script) { return null; }
+			];
+			// create VBO and IBO
+			vbo = gl.createBuffer();
+			gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+			ibo = gl.createBuffer();
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
 
-	var source = "";
-	var child = script.firstChild;
-	while (child) {
-		// node is a "textnode" ?
-		if (child.nodeType == 3) {
-			source += child.textContent;
-		}
-		child = child.nextSibling;
-	}
-	return source;
-}
+			length  = indices.length;
+			texture = loadTexture("wiki.png");
 
-function loadShader(shaderType, shaderSource) {
-	var shader = gl.createShader(shaderType);
-	if (!shader) { return null; }
-	gl.shaderSource(shader, shaderSource);
-	gl.compileShader(shader);
-
-	if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-		alert(gl.getShaderInfoLog(shader));
-		return null;
-	}
-
-	return shader;
-}
-
-function loadTexture(filename) {
-	// preparations
-	var texture = gl.createTexture();
-	gl.bindTexture(gl.TEXTURE_2D, texture);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-	var image = new Image();
-
-	// register event handlers
-	image.onload = function() {
-		gl.bindTexture(gl.TEXTURE_2D, texture);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-		gl.generateMipmap(gl.TEXTURE_2D);
+			atom.frame.add(draw);
+		}.bind(this));
 	};
 
-	// request image from server
-	image.src = filename;
+	function loadTexture(filename) {
+		// preparations
+		var texture = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, texture);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		var image = new Image();
 
-	// return texture object (asynchronous loading, texture NOT available yet!)
-	return texture;
-}
+		// register event handlers
+		image.onload = function() {
+			gl.bindTexture(gl.TEXTURE_2D, texture);
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+			gl.generateMipmap(gl.TEXTURE_2D);
+		};
 
-function draw(time) {
-	player.onTick(time);
+		// request image from server
+		image.src = filename;
 
-	gl.viewport(0, 0, viewportWidth, viewportHeight);
-	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
-
-	// setup shader
-	gl.useProgram(program);
-	gl.enable  (gl.CULL_FACE);
-
-	var mv = mat4.identity( mat4.create() );
-	mat4.rotate ( mv, player.angleVertical, [1, 0, 0]);
-	mat4.rotate ( mv, player.angleHorisontal, [0, 1, 0]);
-	mat4.translate( mv, player.cameraVector );
-
-	var pers = mat4.identity( mat4.create() );
-	mat4.perspective(45, viewportWidth / viewportHeight, 0.1, 100.0, pers);
-
-	gl.uniformMatrix4fv(gl.getUniformLocation(program, 'modelViewMatrix'), false, mv);
-	gl.uniformMatrix4fv(gl.getUniformLocation(program, 'persMatrix'), false, pers);
-
-	// setup interleaved VBO and IBO
-	gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-	gl.enableVertexAttribArray(0);
-	gl.enableVertexAttribArray(1);
-	gl.enableVertexAttribArray(2);
-	gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 8*4, 0*4); // position
-	gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 8*4, 3*4); // normal
-	gl.vertexAttribPointer(2, 2, gl.FLOAT, false, 8*4, 6*4); // texcoord
-
-	// setup texture
-	gl.activeTexture(gl.TEXTURE0);
-	gl.bindTexture(gl.TEXTURE_2D, texture);
-
-	// draw the buffer
-	gl.drawElements(gl.TRIANGLES, this.length, gl.UNSIGNED_SHORT, 0);
-}
-</script>
-
-<script id="shader-vs" type="x-shader/x-vertex">
-	precision highp float;
-	uniform mat4 modelViewMatrix;
-	uniform mat4 persMatrix;
-	attribute vec3 aPosition;
-	attribute vec3 aNormal;
-	attribute vec2 aTexCoord;
-	varying vec3 vNormal;
-	varying vec2 vTexCoord;
-	void main() {
-		gl_Position = persMatrix * modelViewMatrix * vec4(aPosition, 1.0);
-		vTexCoord = aTexCoord;
-		vNormal = aNormal;
+		// return texture object (asynchronous loading, texture NOT available yet!)
+		return texture;
 	}
-</script>
 
-<script id="shader-fs" type="x-shader/x-fragment">
-	precision highp float;
-	varying vec3 vNormal;
-	varying vec2 vTexCoord;
-	uniform sampler2D uTexture;
-	void main() {
-		gl_FragColor = texture2D(uTexture, vTexCoord);
+	function draw(time) {
+		player.onTick(time);
+
+		gl.viewport(0, 0, viewportWidth, viewportHeight);
+		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
+
+		// setup shader
+		gl.useProgram(program);
+		gl.enable  (gl.CULL_FACE);
+
+		var mv = mat4.identity( mat4.create() );
+		mat4.rotate ( mv, player.angleVertical, [1, 0, 0]);
+		mat4.rotate ( mv, player.angleHorisontal, [0, 1, 0]);
+		mat4.translate( mv, player.cameraVector );
+
+		var pers = mat4.identity( mat4.create() );
+		mat4.perspective(45, viewportWidth / viewportHeight, 0.1, 100.0, pers);
+
+		gl.uniformMatrix4fv(gl.getUniformLocation(program, 'modelViewMatrix'), false, mv);
+		gl.uniformMatrix4fv(gl.getUniformLocation(program, 'persMatrix'), false, pers);
+
+		// setup interleaved VBO and IBO
+		gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+		gl.enableVertexAttribArray(0);
+		gl.enableVertexAttribArray(1);
+		gl.enableVertexAttribArray(2);
+		gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 8*4, 0*4); // position
+		gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 8*4, 3*4); // normal
+		gl.vertexAttribPointer(2, 2, gl.FLOAT, false, 8*4, 6*4); // texcoord
+
+		// setup texture
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, texture);
+
+		// draw the buffer
+		gl.drawElements(gl.TRIANGLES, length, gl.UNSIGNED_SHORT, 0);
 	}
+}());
 </script>
 </head>
-<body>
-	<canvas id="canvas" width="512" height="512"></canvas>
-</body>
+	<body>
+		<canvas id="canvas" width="512" height="512"></canvas>
+	</body>
 </html>
