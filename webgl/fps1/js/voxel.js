@@ -33,6 +33,9 @@ atom.declare( 'Voxel', {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.builder.positionBuffer);
 		gl.vertexAttribPointer(program.attributes['vertexPosition'], 3, gl.FLOAT, false, 0, 0);
 
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.builder.normalsBuffer);
+		gl.vertexAttribPointer(program.attributes['vertexNormal'], 3, gl.FLOAT, false, 0, 0);
+
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.builder.indicesBuffer);
 
 		gl.uniformMatrix4fv(program.uniforms['modelMatrix'], false, this.modelMatrix);

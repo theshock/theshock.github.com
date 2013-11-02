@@ -5,10 +5,16 @@ atom.declare('Render', {
 	canvas: null,
 	program: null,
 
+	lightDirection  : vec3.create([ 0.3, -0.5,  0.8]),
+	directionalColor: vec3.create([ 0.9,  0.8,  0.4]),
+	ambientColor    : vec3.create([ 0.1,  0.2,  0.3]),
+
 	initialize: function (onReady) {
 		this.items = [];
 		this.modelViewMatrix = mat4.create();
-		this.persMatrix = mat4.create();
+		this.persMatrix      = mat4.create();
+
+		vec3.negate(vec3.normalize(this.lightDirection));
 
 		this.glInit();
 		this.shadersInit(onReady);
@@ -49,6 +55,10 @@ atom.declare('Render', {
 		gl.uniform1i(uniforms['sampler'], 0);
 		gl.uniformMatrix4fv(uniforms['persMatrix']     , false, this.persMatrix);
 		gl.uniformMatrix4fv(uniforms['modelViewMatrix'], false, this.modelViewMatrix);
+
+		gl.uniform3fv( uniforms['ambientColor']     , this.ambientColor );
+		gl.uniform3fv( uniforms['directionalColor'] , this.directionalColor );
+		gl.uniform3fv( uniforms['lightingDirection'], this.lightDirection);
 
 		for (i = 0; i < this.items.length; i++) {
 			this.items[i].bindBuffers(gl, this.program);
@@ -91,6 +101,7 @@ atom.declare('Render', {
 	/** @private */
 	createVariables: function () {
 		this.createAttribute('textureCoord');
+		this.createAttribute('vertexNormal');
 		this.createAttribute('vertexPosition');
 
 		this.createUniform('sampler');
@@ -98,6 +109,10 @@ atom.declare('Render', {
 		this.createUniform('modelMatrix');
 		this.createUniform('activeVoxel');
 		this.createUniform('modelViewMatrix');
+		// light
+		this.createUniform('ambientColor');
+		this.createUniform('directionalColor');
+		this.createUniform('lightingDirection');
 	},
 
 	/** @private */

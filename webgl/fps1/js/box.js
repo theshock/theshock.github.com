@@ -40,6 +40,15 @@ atom.declare('Box.Builder', {
 		0,0,0,  0,0,1,  0,1,1,  0,1,0  // Left face
 	],
 
+	normals: [
+		 0,0,1,   0,0,1,   0,0,1,   0,0,1, // Front face
+		0,0,-1,  0,0,-1,  0,0,-1,  0,0,-1, // Back face
+		 0,1,0,   0,1,0,   0,1,0,   0,1,0, // Top face
+		0,-1,0,  0,-1,0,  0,-1,0,  0,-1,0, // Bottom face
+		 1,0,0,   1,0,0,   1,0,0,   1,0,0, // Right face
+		-1,0,0,  -1,0,0,  -1,0,0,  -1,0,0  // Left face
+	],
+
 	indices: [
 		 0,  1,  2,    0,  2,  3, // Front face
 		 4,  5,  6,    4,  6,  7, // Back face
@@ -73,18 +82,16 @@ atom.declare('Box.Builder', {
 
 	/** @return {Box.Builder} */
 	createBuffers: function (gl) {
-		this.positionBuffer = this.createBuffer(gl, true);
-		this.textureBuffer  = this.createBuffer(gl, false);
+		this.normalsBuffer  = this.createBuffer(gl, this.normals);
+		this.positionBuffer = this.createBuffer(gl, this.vertices);
+		this.textureBuffer  = this.createBuffer(gl, this.textures);
 		this.indicesBuffer  = this.createIndicesBuffer(gl);
 		return this;
 	},
 
-	createBuffer: function (gl, vertices) {
-		var data, buffer;
+	createBuffer: function (gl, data) {
+		var buffer = gl.createBuffer();
 
-		data   = vertices ? this.vertices : this.textures;
-		buffer = gl.createBuffer();
-		buffer.itemSize = vertices ? 3 : 2;
 		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
 
