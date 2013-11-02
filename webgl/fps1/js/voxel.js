@@ -33,10 +33,12 @@ atom.declare( 'Voxel', {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.builder.positionBuffer);
 		gl.vertexAttribPointer(program.attributes['vertexPosition'], 3, gl.FLOAT, false, 0, 0);
 
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.builder.indicesBuffer);
+
 		gl.uniformMatrix4fv(program.uniforms['modelMatrix'], false, this.modelMatrix);
 		gl.uniform1f       (program.uniforms['activeVoxel'], this.active ? 1.0 : 0.0);
 
-		gl.drawArrays(gl.TRIANGLES, 0, this.builder.count);
+		gl.drawElements(gl.TRIANGLES, this.builder.indices.length, gl.UNSIGNED_SHORT, 0);
 		return this;
 	},
 

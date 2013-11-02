@@ -20,7 +20,7 @@ atom.declare( 'Controller', {
 		});
 		this.render.setTexture(images.get('textures'));
 
-		this.voxels = Voxel.tinyWorld();
+		this.voxels = Voxel.baseWorld();
 
 		this.voxels.forEach(function (voxel) {
 			this.render.addItem(voxel);
