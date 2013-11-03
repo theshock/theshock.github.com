@@ -75,18 +75,18 @@ Voxel.baseWorld = function () {
 
 	materials.erase('rock');
 
-	for (x = 0; x <= 3; x++) {
-		for (z = 0; z <= 3; z++) {
+	for (x = 0; x <= 8; x++) {
+		for (z = 0; z <= 8; z++) {
 			result.push(
 				new Voxel('rock', vec3.create([x,-1,z]))
 			);
 		}
 	}
 
-	for (i = 20; i--;) {
+	for (i = 50; i--;) {
 		result.push(
 			new Voxel(materials.random, vec3.create([
-				Number.random(0, 3),Number.random(0, 1),Number.random(0, 3)
+				Number.random(0, 8),Number.random(0, 3),Number.random(0, 8)
 			]))
 		);
 	}

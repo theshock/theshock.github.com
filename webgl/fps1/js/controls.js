@@ -3,10 +3,10 @@ LibCanvas.extract();
 /** @class Controls */
 atom.declare( 'Controls', {
 
-	initialize: function (player) {
+	initialize: function (player, images) {
 		this.player = player;
-		this.move = new Controls.Element('move');
-		this.turn = new Controls.Element('turn');
+		this.move = new Controls.Element('move', images);
+		this.turn = new Controls.Element('turn', images);
 	},
 
 	onTick: function (time) {
@@ -36,7 +36,7 @@ atom.declare( 'Controls.Element', {
 	maxRadius: 80,
 	pointRadius: 10,
 
-	initialize: function (className) {
+	initialize: function (className, images) {
 		var dom = atom.dom.create('canvas');
 		this.canvas = dom.first;
 		this.canvas.width  = 200;
@@ -46,6 +46,8 @@ atom.declare( 'Controls.Element', {
 		this.shapeOut     = new Circle(100, 100, this.maxRadius + this.pointRadius);
 		this.shapeIn      = new Circle(100, 100, this.minRadius);
 		this.shapePointer = new Circle(100, 100, this.pointRadius);
+
+		this.images = images;
 
 		dom.addClass('control');
 		dom.addClass(className);
@@ -144,10 +146,12 @@ atom.declare( 'Controls.Element', {
 
 		ctx.clearAll();
 		ctx.fillStyle = 'rgba(255,255,255,0.3)';
-		ctx.fill( this.shapeOut );
-		ctx.fill( this.shapeIn );
+		ctx.drawImage(this.images.get('control'));
 		if (this.inside) {
-			ctx.fill( this.shapePointer );
+			ctx.drawImage({
+				image: this.images.get('point'),
+				center: this.shapePointer.center
+			});
 		}
 	}
 

@@ -6,8 +6,8 @@ atom.declare( 'Player', {
 		movement: 3
 	},
 
-	initialize: function () {
-		this.controls = new Controls(this);
+	initialize: function (images) {
+		this.controls = new Controls(this, images);
 		this.trace    = atom.trace();
 
 		this.position   = vec3.create([ -2, -0.25, -2]);
