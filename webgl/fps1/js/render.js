@@ -69,7 +69,7 @@ atom.declare('Render', {
 	glInit: function () {
 		var gl, canvas;
 
-		canvas = atom.dom('canvas').first;
+		canvas = atom.dom('canvas#view').first;
 
 		gl = Utils.getContext(canvas);
 

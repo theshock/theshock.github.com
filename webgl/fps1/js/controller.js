@@ -3,7 +3,8 @@ atom.declare( 'Controller', {
 
 	initialize: function () {
 		atom.ImagePreloader.run({
-			textures: 'textures.png'
+			'textures': 'textures.png',
+			'arrows'  : 'arrows.png'
 		}, this.start, this);
 	},
 
@@ -13,7 +14,7 @@ atom.declare( 'Controller', {
 	start: function (images) {
 		var onTick = this.onTick.bind(this);
 
-		this.player = new Player();
+		this.player = new Player(images.get('arrows'));
 
 		this.render = new Render(function () {
 			atom.frame.add( onTick );

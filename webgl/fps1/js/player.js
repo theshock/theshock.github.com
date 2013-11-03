@@ -6,8 +6,9 @@ atom.declare( 'Player', {
 		movement: 3
 	},
 
-	initialize: function () {
-		this.trace = atom.trace();
+	initialize: function (arrows) {
+		this.controls = new Controls(arrows);
+		this.trace    = atom.trace();
 
 		this.position   = vec3.create([ -2, -0.25, -2]);
 		this.direction  = vec3.normalize(vec3.create([ 0.7, 0.25, 0.7]));
@@ -96,9 +97,9 @@ atom.declare( 'Player', {
 	checkAction: function (time, keyFor, keyRev, callback) {
 		var keyboard = atom.Keyboard();
 
-		if (keyboard.key(keyRev)) {
+		if (keyboard.key(keyRev) || this.controls.key(keyRev)) {
 			time *= -1;
-		} else if (!keyboard.key(keyFor)) {
+		} else if (!keyboard.key(keyFor) && !this.controls.key(keyFor)) {
 			time = 0;
 		}
 
@@ -118,6 +119,14 @@ atom.declare( 'Player', {
 		return vec3.scale(direction, time/1000*this.speed.movement);
 	},
 
+	moveNormal: function (time) {
+		vec3.add(this.position, this.getMovementVector(time, false));
+	},
+
+	moveStrafe: function (time) {
+		vec3.add(this.position, this.getMovementVector(time, true));
+	},
+
 	onTick: function (time) {
 		this.checkAction(time, 'aright', 'aleft', function (time) {
 			this.rotateHorisontal( time.degree() );
@@ -126,10 +135,10 @@ atom.declare( 'Player', {
 			this.rotateVertical  (-time.degree() );
 		});
 		this.checkAction(time, 'w', 's', function (time) {
-			vec3.add(this.position, this.getMovementVector(time, false));
+			this.moveNormal(time);
 		});
 		this.checkAction(time, 'd', 'a', function (time) {
-			vec3.add(this.position, this.getMovementVector(time, true ));
+			this.moveStrafe(time);
 		});
 
 		this.debug();

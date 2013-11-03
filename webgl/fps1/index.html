@@ -9,20 +9,26 @@
 				color:#fc9;
 				font: 13px monospace;
 			}
+
+			canvas {
+				display: block;
+			}
 		</style>
 
 		<script src="js/lib/atom.js"></script>
+		<script src="js/lib/libcanvas.js"></script>
 		<script src="js/lib/glMatrix.js"></script>
 		<script src="js/lib/utils.js"></script>
 
-		<script src="js/controller.js?v2"></script>
-		<script src="js/box.js?v2"></script>
-		<script src="js/render.js?v2"></script>
-		<script src="js/player.js?v2"></script>
-		<script src="js/voxel.js?v2"></script>
+		<script src="js/controller.js?v3"></script>
+		<script src="js/controls.js?v3"></script>
+		<script src="js/box.js?v3"></script>
+		<script src="js/render.js?v3"></script>
+		<script src="js/player.js?v3"></script>
+		<script src="js/voxel.js?v3"></script>
 	</head>
-
-
-	<body> <canvas width="800" height="500"></canvas> </body>
+	<body>
+		<canvas width="800" height="500" id="view" ></canvas>
+	</body>
 </html>
 
