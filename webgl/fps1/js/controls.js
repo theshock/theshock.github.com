@@ -67,8 +67,6 @@ atom.declare( 'Controls.Element', {
 		}
 
 		dom.addEvent('mousemove'  , move);
-		dom.addEvent('mouseover'  , move);
-		dom.addEvent('touchstart' , move);
 		dom.addEvent('touchmove'  , move);
 		dom.addEvent('mouseout'   , out);
 		dom.addEvent('touchcancel', out);
