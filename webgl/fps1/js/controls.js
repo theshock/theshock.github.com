@@ -59,18 +59,26 @@ atom.declare( 'Controls.Element', {
 	bindEvents: function (dom) {
 		var elem = this;
 
-		function move (e) {
+		dom.addEvent('touchstart' , Mouse.prevent);
+		dom.addEvent('mousemove', function (e) {
 			e.preventDefault();
 			elem.changePosition(Mouse.getOffset(e));
-		}
+		});
+		dom.addEvent('touchmove', function (e) {
+			var offset, t;
+			e.preventDefault();
+			offset = dom.offset();
+			t = e.changedTouches[0];
+			elem.changePosition(new Point(
+				t.pageX - offset.x,
+				t.pageY - offset.y
+			));
+		});
+
 		function out (e) {
 			e.preventDefault();
 			elem.changePosition(null);
 		}
-
-		dom.addEvent('mousemove'  , move);
-		dom.addEvent('touchmove'  , move);
-		dom.addEvent('touchstart' , Mouse.prevent);
 		dom.addEvent('mouseout'   , out);
 		dom.addEvent('touchcancel', out);
 		dom.addEvent('touchleave' , out);
