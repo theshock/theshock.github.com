@@ -33,8 +33,8 @@ atom.declare( 'Controller', {
 	},
 
 	changeVoxelsActive: function (voxels) {
-		var active = null,
-			traceActive = atom.trace();
+		var active = null;
+			//traceActive = atom.trace();
 
 		atom.Keyboard().events.add('q', function () {
 			if (active != null) {
@@ -48,7 +48,7 @@ atom.declare( 'Controller', {
 			}
 
 			voxels[active].active = true;
-			traceActive.value = voxels[active];
+			//traceActive.value = voxels[active];
 		});
 	},
 
