@@ -65,14 +65,7 @@ atom.declare( 'Controls.Element', {
 			elem.changePosition(Mouse.getOffset(e));
 		});
 		dom.addEvent('touchmove', function (e) {
-			var offset, t;
-			e.preventDefault();
-			offset = dom.offset();
-			t = e.changedTouches[0];
-			elem.changePosition(new Point(
-				t.pageX - offset.x,
-				t.pageY - offset.y
-			));
+			elem.checkTouch(e, dom)
 		});
 
 		function out (e) {
@@ -83,6 +76,26 @@ atom.declare( 'Controls.Element', {
 		dom.addEvent('touchcancel', out);
 		dom.addEvent('touchleave' , out);
 		dom.addEvent('touchend'   , out);
+	},
+
+	checkTouch: function (e, dom) {
+		var offset, i, diff,
+			c = e.changedTouches;
+		e.preventDefault();
+		offset = dom.offset();
+
+		for (i = 0; i < c.length; i++) {
+			diff = new Point(
+				c[i].pageX - offset.x,
+				c[i].pageY - offset.y
+			);
+
+			if (diff.x.between(0, this.canvas.width)
+			&&  diff.y.between(0, this.canvas.height)) {
+				this.changePosition(diff);
+				break;
+			}
+		}
 	},
 
 	getValues: function () {
