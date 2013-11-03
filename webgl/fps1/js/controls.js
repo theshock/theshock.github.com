@@ -60,9 +60,11 @@ atom.declare( 'Controls.Element', {
 		var elem = this;
 
 		function move (e) {
+			e.preventDefault();
 			elem.changePosition(Mouse.getOffset(e));
 		}
 		function out (e) {
+			e.preventDefault();
 			elem.changePosition(null);
 		}
 
