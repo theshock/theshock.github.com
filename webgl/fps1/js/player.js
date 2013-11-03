@@ -6,8 +6,8 @@ atom.declare( 'Player', {
 		movement: 3
 	},
 
-	initialize: function (arrows) {
-		this.controls = new Controls(arrows);
+	initialize: function () {
+		this.controls = new Controls(this);
 		this.trace    = atom.trace();
 
 		this.position   = vec3.create([ -2, -0.25, -2]);
@@ -48,7 +48,6 @@ atom.declare( 'Player', {
 		return vec3.normalize( vec3.cross(strafe, dirVec) );
 	},
 
-	/** @private */
 	rotateVertical: function (angle) {
 		angle *= this.speed.rotate;
 
@@ -72,7 +71,6 @@ atom.declare( 'Player', {
 		], this.direction);
 	},
 
-	/** @private */
 	rotateHorisontal: function (angle) {
 		angle *= this.speed.rotate;
 
@@ -97,9 +95,9 @@ atom.declare( 'Player', {
 	checkAction: function (time, keyFor, keyRev, callback) {
 		var keyboard = atom.Keyboard();
 
-		if (keyboard.key(keyRev) || this.controls.key(keyRev)) {
+		if (keyboard.key(keyRev)) {
 			time *= -1;
-		} else if (!keyboard.key(keyFor) && !this.controls.key(keyFor)) {
+		} else if (!keyboard.key(keyFor)) {
 			time = 0;
 		}
 
@@ -140,6 +138,8 @@ atom.declare( 'Player', {
 		this.checkAction(time, 'd', 'a', function (time) {
 			this.moveStrafe(time);
 		});
+
+		this.controls.onTick(time);
 
 		this.debug();
 	}

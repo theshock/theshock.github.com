@@ -3,66 +3,116 @@ LibCanvas.extract();
 /** @class Controls */
 atom.declare( 'Controls', {
 
-	initialize: function (arrows) {
-		this.arrows  = arrows;
-		this.helper  = new App.Light( new Size(800, 100) );
-		this.actions = {};
-
-		this.create(0, 'left' , 'a');
-		this.create(1, 'up'   , 'w');
-		this.create(2, 'down' , 's');
-		this.create(3, 'right', 'd');
-
-		this.create(5, 'left' , 'aleft');
-		this.create(6, 'up'   , 'aup');
-		this.create(7, 'down' , 'adown');
-		this.create(8, 'right', 'aright');
+	initialize: function (player) {
+		this.player = player;
+		this.move = new Controls.Element('move');
+		this.turn = new Controls.Element('turn');
 	},
 
-	key: function (key) {
-		return this.actions[key] === true;
-	},
+	onTick: function (time) {
+		var move = this.move.getValues();
+		var turn = this.turn.getValues();
 
-	create: function (index, type, action) {
-		var button, actions = this.actions;
+		if (move) {
+			this.player.moveStrafe( time*move.x);
+			this.player.moveNormal(-time*move.y);
+		}
 
-		button = new Controls.Button( this.helper.layer, {
-			image: this.arrows,
-			type : type,
-			shape: new Rectangle(90 * index, 10, 80, 80)
-		});
-
-		this.helper.mouseHandler.subscribe(button);
-
-		button.events.add('mousedown', function () {
-			actions[action] = true;
-		});
-
-		button.events.add('mouseup', function () {
-			actions[action] = false;
-		});
-
-		button.events.add('mouseout', function () {
-			actions[action] = false;
-		});
+		if (turn) {
+			this.player.rotateHorisontal( (time*turn.x).degree() );
+			this.player.rotateVertical  ( (time*turn.y).degree() );
+		}
 	}
 
 
 });
 
-/** @class Controls.Button */
-atom.declare( 'Controls.Button', App.Element, {
+/** @class Controls */
+atom.declare( 'Controls.Element', {
 
-	imageMap: [ 'up', 'right', 'left', 'down' ],
+	inside: false,
 
-	renderTo: function (ctx) {
-		var typeIndex = this.imageMap.indexOf(this.settings.get('type'));
-		ctx.drawImage({
-			image: this.settings.get('image'),
-			draw : this.shape,
-			crop : new Rectangle(80*typeIndex,0,80,80)
+	minRadius: 40,
+	maxRadius: 80,
+	pointRadius: 10,
+
+	initialize: function (className) {
+		var dom = atom.dom.create('canvas');
+		this.canvas = dom.first;
+		this.canvas.width  = 200;
+		this.canvas.height = 200;
+		this.ctx = this.canvas.getContext('2d-libcanvas');
+
+		this.shapeOut     = new Circle(100, 100, this.maxRadius + this.pointRadius);
+		this.shapeIn      = new Circle(100, 100, this.minRadius);
+		this.shapePointer = new Circle(100, 100, this.pointRadius);
+
+		dom.addClass('control');
+		dom.addClass(className);
+		dom.appendTo('body');
+		dom.addEvent({
+			mousemove: function (e) {
+				this.changePosition(Mouse.getOffset(e));
+			}.bind(this),
+			mouseout: function () {
+				this.changePosition(null);
+			}.bind(this)
 		});
-		ctx.stroke(this.shape.clone().snapToPixel(), '#999');
+
+		this.repaint();
+	},
+
+	getValues: function () {
+		if (this.inside) {
+			var diff     = this.shapeOut.center.diff(this.shapePointer.center),
+				distance = atom.math.hypotenuse(diff.x, diff.y),
+				delta    = this.maxRadius - this.minRadius,
+				scale    = (distance - this.minRadius) / distance;
+
+			diff.x *= scale / delta;
+			diff.y *= scale / delta;
+
+			// diff length is between 0 & 1
+			return diff;
+		} else {
+			return null;
+		}
+	},
+
+	changePosition: function (point) {
+		var diff, distance, center = this.shapeOut.center;
+
+		if (point) {
+			diff = center.diff(point);
+			distance = atom.math.hypotenuse(diff.x, diff.y);
+			this.inside = true;
+			if (distance > this.maxRadius) {
+				diff.x = Math.floor(diff.x * this.maxRadius / distance);
+				diff.y = Math.floor(diff.y * this.maxRadius / distance);
+			} else if (distance < this.minRadius) {
+				diff.x = 0;
+				diff.y = 0;
+				this.inside = false;
+			}
+			this.shapePointer.center
+				.set(center)
+				.move(diff);
+		} else {
+			this.inside = false;
+		}
+		this.repaint();
+	},
+
+	repaint: function () {
+		var ctx = this.ctx;
+
+		ctx.clearAll();
+		ctx.fillStyle = 'rgba(255,255,255,0.3)';
+		ctx.fill( this.shapeOut );
+		ctx.fill( this.shapeIn );
+		if (this.inside) {
+			ctx.fill( this.shapePointer );
+		}
 	}
 
 });

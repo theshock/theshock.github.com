@@ -4,6 +4,11 @@
 		<title>WebGL 3D</title>
 		<meta charset="UTF-8">
 		<style>
+			html, body {
+				margin: 0;
+				padding: 0;
+			}
+
 			body {
 				background:#111;
 				color:#fc9;
@@ -12,6 +17,20 @@
 
 			canvas {
 				display: block;
+			}
+
+			.control {
+				position: absolute;
+			}
+
+			.control.turn {
+				top: 400px;
+				left: 760px;
+			}
+
+			.control.move {
+				top: 400px;
+				left: 0;
 			}
 		</style>
 
@@ -28,7 +47,9 @@
 		<script src="js/voxel.js?v3"></script>
 	</head>
 	<body>
-		<canvas width="800" height="500" id="view" ></canvas>
+		<canvas width="960" height="600" id="view" ></canvas>
 	</body>
 </html>
+
+
 
