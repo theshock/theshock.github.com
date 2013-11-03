@@ -50,16 +50,30 @@ atom.declare( 'Controls.Element', {
 		dom.addClass('control');
 		dom.addClass(className);
 		dom.appendTo('body');
-		dom.addEvent({
-			mousemove: function (e) {
-				this.changePosition(Mouse.getOffset(e));
-			}.bind(this),
-			mouseout: function () {
-				this.changePosition(null);
-			}.bind(this)
-		});
+
+		this.bindEvents(dom);
 
 		this.repaint();
+	},
+
+	bindEvents: function (dom) {
+		var elem = this;
+
+		function move (e) {
+			elem.changePosition(Mouse.getOffset(e));
+		}
+		function out (e) {
+			elem.changePosition(null);
+		}
+
+		dom.addEvent('mousemove'  , move);
+		dom.addEvent('mouseover'  , move);
+		dom.addEvent('touchstart' , move);
+		dom.addEvent('touchmove'  , move);
+		dom.addEvent('mouseout'   , out);
+		dom.addEvent('touchcancel', out);
+		dom.addEvent('touchleave' , out);
+		dom.addEvent('touchend'   , out);
 	},
 
 	getValues: function () {
