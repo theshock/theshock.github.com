@@ -17,7 +17,7 @@ atom.declare( 'Voxel', {
 		mat4.translate(this.modelMatrix, this.position);
 
 		// split cells between each other
-		// mat4.translate(this.modelMatrix, this.position);
+		 mat4.translate(this.modelMatrix, this.position);
 	},
 
 	/** @return {String} */
@@ -26,7 +26,7 @@ atom.declare( 'Voxel', {
 	},
 
 	/** @return {Voxel} */
-	bindBuffers: function (gl, program) {
+	drawItem: function (gl, program) {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.builder.textureBuffer);
 		gl.vertexAttribPointer(program.attributes['textureCoord']  , 2, gl.FLOAT, false, 0, 0);
 
@@ -34,7 +34,7 @@ atom.declare( 'Voxel', {
 		gl.vertexAttribPointer(program.attributes['vertexPosition'], 3, gl.FLOAT, false, 0, 0);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.builder.normalsBuffer);
-		gl.vertexAttribPointer(program.attributes['vertexNormal'], 3, gl.FLOAT, false, 0, 0);
+		gl.vertexAttribPointer(program.attributes['vertexNormal']  , 3, gl.FLOAT, false, 0, 0);
 
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.builder.indicesBuffer);
 

@@ -29,28 +29,6 @@ atom.declare( 'Controller', {
 		}.bind(this));
 
 		this.requestPointerLock(this.render.canvas);
-
-		this.changeVoxelsActive(this.voxels);
-	},
-
-	changeVoxelsActive: function (voxels) {
-		var active = null;
-			//traceActive = atom.trace();
-
-		atom.Keyboard().events.add('q', function () {
-			if (active != null) {
-				voxels[active].active = false;
-			}
-
-			if (active == null || active >= voxels.length - 1) {
-				active = 0;
-			} else {
-				active++;
-			}
-
-			voxels[active].active = true;
-			//traceActive.value = voxels[active];
-		});
 	},
 
 	onTick: function (time) {

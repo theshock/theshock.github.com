@@ -10,9 +10,8 @@ atom.declare('Render', {
 	ambientColor    : vec3.create([ 0.1,  0.2,  0.3]),
 
 	initialize: function (onReady) {
+		this.viewProjMatrix = mat4.create();
 		this.items = [];
-		this.modelViewMatrix = mat4.create();
-		this.persMatrix      = mat4.create();
 
 		vec3.negate(vec3.normalize(this.lightDirection));
 
@@ -34,12 +33,16 @@ atom.declare('Render', {
 
 	/** @param {Player} player */
 	positionCamera: function (player) {
-		var mv = mat4.identity( this.modelViewMatrix );
-		mat4.rotate   ( mv, player.angleVertical  , [1, 0, 0]);
-		mat4.rotate   ( mv, player.angleHorisontal, [0, 1, 0]);
-		mat4.translate( mv, player.cameraVector );
+		var view, proj;
 
-		mat4.perspective(45, this.gl.viewportWidth / this.gl.viewportHeight, 0.1, 100.0, this.persMatrix);
+		view = mat4.identity( mat4.create() );
+		mat4.rotate   ( view, player.angleVertical  , [1, 0, 0]);
+		mat4.rotate   ( view, player.angleHorisontal, [0, 1, 0]);
+		mat4.translate( view, player.cameraVector );
+
+		proj = mat4.perspective(45, this.gl.viewportWidth / this.gl.viewportHeight, 0.1, 100.0, mat4.create());
+
+		mat4.multiply(proj, view, this.viewProjMatrix);
 	},
 
 	redraw: function () {
@@ -49,19 +52,22 @@ atom.declare('Render', {
 		gl.clear   (gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		gl.enable  (gl.CULL_FACE);
 
+		gl.disable(gl.DEPTH_TEST);
+		gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+		gl.enable(gl.BLEND);
+
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, this.texture);
 
 		gl.uniform1i(uniforms['sampler'], 0);
-		gl.uniformMatrix4fv(uniforms['persMatrix']     , false, this.persMatrix);
-		gl.uniformMatrix4fv(uniforms['modelViewMatrix'], false, this.modelViewMatrix);
+		gl.uniformMatrix4fv(uniforms['viewProjMatrix'], false, this.viewProjMatrix);
 
 		gl.uniform3fv( uniforms['ambientColor']     , this.ambientColor );
 		gl.uniform3fv( uniforms['directionalColor'] , this.directionalColor );
 		gl.uniform3fv( uniforms['lightingDirection'], this.lightDirection);
 
 		for (i = 0; i < this.items.length; i++) {
-			this.items[i].bindBuffers(gl, this.program);
+			this.items[i].drawItem(gl, this.program);
 		}
 	},
 
@@ -105,10 +111,8 @@ atom.declare('Render', {
 		this.createAttribute('vertexPosition');
 
 		this.createUniform('sampler');
-		this.createUniform('persMatrix');
 		this.createUniform('modelMatrix');
-		this.createUniform('activeVoxel');
-		this.createUniform('modelViewMatrix');
+		this.createUniform('viewProjMatrix');
 		// light
 		this.createUniform('ambientColor');
 		this.createUniform('directionalColor');
